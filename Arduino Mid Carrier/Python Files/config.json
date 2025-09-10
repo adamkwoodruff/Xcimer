@@ -857,7 +857,7 @@
       }
     },
     {
-      "poll_rpc_func": "CAP_VOLTAGE",
+        "poll_rpc_func": "cap_voltage",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
@@ -869,7 +869,7 @@
       }
     },
     {
-      "poll_rpc_func": "COIL_CURRENT",
+        "poll_rpc_func": "coil_current",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
@@ -881,7 +881,7 @@
       }
     },
     {
-      "poll_rpc_func": "SYSTEM_TEMP",
+        "poll_rpc_func": "system_temp",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
@@ -893,7 +893,7 @@
       }
     },
     {
-      "poll_rpc_func": "IGBT_FAULT",
+        "poll_rpc_func": "igbt_fault",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
@@ -905,7 +905,7 @@
       }
     },
     {
-      "poll_rpc_func": "IGBT_PWM_HI",
+        "poll_rpc_func": "igbt_pwm_hi",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
@@ -917,7 +917,7 @@
       }
     },
     {
-      "poll_rpc_func": "SCR_TRIG",
+        "poll_rpc_func": "scr_trig",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
@@ -929,7 +929,7 @@
       }
     },
     {
-      "poll_rpc_func": "SCR_INHIBIT",
+        "poll_rpc_func": "scr_inhibit",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
@@ -941,7 +941,7 @@
       }
     },
     {
-      "poll_rpc_func": "DAC_VOLTAGE_MON",
+        "poll_rpc_func": "dac_voltage_mon",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
@@ -953,7 +953,7 @@
       }
     },
     {
-      "poll_rpc_func": "DAC_CURRENT_MON",
+        "poll_rpc_func": "dac_current_mon",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
