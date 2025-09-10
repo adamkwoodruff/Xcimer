@@ -1,0 +1,754 @@
+{
+  "display_config": {
+    "version": "1.1",
+    "allow_display_adjustment": true,
+    "panels": [
+      {
+        "id": 0,
+        "type": "menu",
+        "title": "Main Menu",
+        "buttons": [
+          {
+            "id": 1,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "display_panel_id",
+              "do": "set",
+              "amount": 1
+            },
+            "text": "Voltage and Current Control",
+            "event_dest": "uc"
+          },
+          {
+            "id": 2,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "display_panel_id",
+              "do": "set",
+              "amount": 2
+            },
+            "text": "Enable + Warn Lamp",
+            "event_dest": "uc"
+          },
+          {
+            "id": 3,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "display_panel_id",
+              "do": "set",
+              "amount": 3
+            },
+            "text": "PWM Control",
+            "event_dest": "uc"
+          },
+          {
+            "id": 4,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "allow_display_adjustment",
+              "do": "set",
+              "amount": 1
+            },
+            "text": "Toggle UI Lock",
+            "event_dest": "uc"
+          },
+          {
+            "id": 5,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "display_panel_id",
+              "do": "set",
+              "amount": 4
+            },
+            "text": "Test",
+            "event_dest": "uc"
+          }
+        ],
+        "labels": [
+          {
+            "id": 1,
+            "text": "Go to Voltage and Current Control"
+          },
+          {
+            "id": 2,
+            "text": "Go to Enable + Warn Lamp"
+          }
+        ],
+        "values": []
+      },
+      {
+        "id": 1,
+        "type": "control",
+        "title": "Voltage and Current Control",
+        "buttons": [
+          {
+            "id": 1,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "volt_set",
+              "do": "add",
+              "amount": 1
+            },
+            "text": "Voltage +1 kV",
+            "event_dest": "uc"
+          },
+          {
+            "id": 2,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "volt_set",
+              "do": "add",
+              "amount": -1
+            },
+            "text": "Voltage -1 kV",
+            "event_dest": "uc"
+          },
+          {
+            "id": 3,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "volt_set",
+              "do": "add",
+              "amount": 10
+            },
+            "text": "Voltage +10 kV",
+            "event_dest": "uc"
+          },
+          {
+            "id": 4,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "volt_set",
+              "do": "add",
+              "amount": -10
+            },
+            "text": "Voltage -10 kV",
+            "event_dest": "uc"
+          },
+          {
+            "id": 5,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "curr_set",
+              "do": "add",
+              "amount": 1
+            },
+            "text": "Current +1 mA",
+            "event_dest": "uc"
+          },
+          {
+            "id": 6,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "curr_set",
+              "do": "add",
+              "amount": -1
+            },
+            "text": "Current -1 mA",
+            "event_dest": "uc"
+          },
+          {
+            "id": 7,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "curr_set",
+              "do": "add",
+              "amount": 10
+            },
+            "text": "Current +10 mA",
+            "event_dest": "uc"
+          },
+          {
+            "id": 8,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "curr_set",
+              "do": "add",
+              "amount": -10
+            },
+            "text": "Current -10 mA",
+            "event_dest": "uc"
+          }
+        ],
+        "labels": [
+          {
+            "id": 1,
+            "text": "Voltage:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 9,
+            "text": " kV",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 2,
+            "text": "Set Voltage:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 10,
+            "text": " kV",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 5,
+            "text": "Current:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 13,
+            "text": " mA",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 6,
+            "text": "Set Current:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 14,
+            "text": " mA",
+            "visible": true,
+            "color": "white"
+          }
+        ],
+        "values": [
+          {
+            "id": 1,
+            "name": "volt_act",
+            "type": "float",
+            "display_format": "%.2f",
+            "min_val": 0,
+            "max_val": 100000,
+            "upper_green_val": 100000,
+            "lower_red_val": 0,
+            "upper_override_val": 100000,
+            "upper_override_text": "OVER LIMIT",
+            "lower_override_val": 0,
+            "lower_override_text": "UNDER LIMIT",
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 2,
+            "name": "volt_set",
+            "type": "float",
+            "display_format": "%.2f",
+            "min_val": 0,
+            "max_val": 100,
+            "upper_green_val": 100,
+            "lower_red_val": 0,
+            "upper_override_val": 100,
+            "upper_override_text": "OVER LIMIT",
+            "lower_override_val": 0,
+            "lower_override_text": "UNDER LIMIT",
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 5,
+            "name": "curr_act",
+            "type": "float",
+            "display_format": "%.2f",
+            "min_val": 40,
+            "max_val": 400,
+            "upper_green_val": 360,
+            "lower_red_val": 40,
+            "upper_override_val": 360,
+            "upper_override_text": "OVER LIMIT",
+            "lower_override_val": 40,
+            "lower_override_text": "UNDER LIMIT",
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 6,
+            "name": "curr_set",
+            "type": "float",
+            "display_format": "%.2f",
+            "min_val": 40,
+            "max_val": 400,
+            "upper_green_val": 360,
+            "lower_red_val": 40,
+            "upper_override_val": 360,
+            "upper_override_text": "OVER LIMIT",
+            "lower_override_val": 40,
+            "lower_override_text": "UNDER LIMIT",
+            "default_color": "blue",
+            "default_value": 0
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "type": "control",
+        "title": "Enable + Warn Lamp",
+        "buttons": [
+          {
+            "id": 1,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "inter_enable",
+              "do": "toggle"
+            },
+            "text": "Internal Enable",
+            "event_dest": "uc"
+          },
+          {
+            "id": 2,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "warn_lamp",
+              "do": "toggle"
+            },
+            "text": "Warning lamp test",
+            "event_dest": "uc"
+          }
+        ],
+        "labels": [
+          {
+            "id": 1,
+            "text": "Internal Enable:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 2,
+            "text": "External Enable:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 3,
+            "text": "Warn Lamp:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 4,
+            "text": "Output Enable:",
+            "visible": true,
+            "color": "white"
+          }
+        ],
+        "values": [
+          {
+            "id": 1,
+            "name": "inter_enable",
+            "type": "float",
+            "display_format": "%.2f",
+            "max_val": 1,
+            "min_val": 0,
+            "upper_green_val": 1,
+            "lower_red_val": -1,
+            "upper_override_val": 2,
+            "upper_override_text": "OVER LIMIT",
+            "lower_override_val": -2,
+            "lower_override_text": "UNDER LIMIT",
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 2,
+            "name": "extern_enable",
+            "type": "float",
+            "display_format": "%.2f",
+            "max_val": 1,
+            "min_val": 0,
+            "upper_green_val": 1,
+            "lower_red_val": -1,
+            "default_color": "blue",
+            "default_value": 1
+          },
+          {
+            "id": 3,
+            "name": "warn_lamp",
+            "type": "float",
+            "display_format": "%.2f",
+            "max_val": 1,
+            "min_val": 0,
+            "upper_green_val": 2,
+            "lower_red_val": -2,
+            "upper_override_val": 2,
+            "upper_override_text": "OVER LIMIT",
+            "lower_override_val": -2,
+            "lower_override_text": "UNDER LIMIT",
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 4,
+            "name": "output_enable",
+            "type": "float",
+            "display_format": "%.2f",
+            "max_val": 1,
+            "min_val": 0,
+            "upper_green_val": 1,
+            "lower_red_val": -1,
+            "default_color": "blue",
+            "default_value": 0
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "type": "control",
+        "title": "PWM Control",
+        "buttons": [
+          {
+            "id": 1,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "ps_disable",
+              "do": "toggle"
+            },
+            "text": "Toggle PS Disable",
+            "event_dest": "uc"
+          },
+          {
+            "id": 2,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "pwm_enable",
+              "do": "toggle"
+            },
+            "text": "Toggle PWM Enable",
+            "event_dest": "uc"
+          },
+          {
+            "id": 3,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "pwm_reset",
+              "do": "toggle"
+            },
+            "text": "Toggle PWM Reset",
+            "event_dest": "uc"
+          },
+          {
+            "id": 4,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "mode_set",
+              "do": "set",
+              "amount": 1
+            },
+            "text": "Remote Mode",
+            "event_dest": "uc"
+          },
+          {
+            "id": 5,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "mode_set",
+              "do": "set",
+              "amount": 0
+            },
+            "text": "Local Mode",
+            "event_dest": "uc"
+          }
+        ],
+        "labels": [
+          {
+            "id": 1,
+            "text": "PS Disable:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 3,
+            "text": "PWM Enable:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 5,
+            "text": "PWM Reset:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 7,
+            "text": "Input Mode:",
+            "visible": true,
+            "color": "white"
+          }
+        ],
+        "values": [
+          {
+            "id": 1,
+            "name": "ps_disable",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
+          },
+          {
+            "id": 3,
+            "name": "pwm_enable",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 5,
+            "name": "pwm_reset",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 7,
+            "name": "mode_set",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 0
+          }
+        ]
+      }
+      ,
+      {
+        "id": 4,
+        "type": "control",
+        "title": "Test",
+        "buttons": [
+          {
+            "id": 1,
+            "visible": true,
+            "disable": false,
+            "action": { "name": "volt_set", "do": "set", "amount": 13000 },
+            "text": "Set Voltage 13kV",
+            "event_dest": "uc"
+          },
+          {
+            "id": 2,
+            "visible": true,
+            "disable": false,
+            "action": { "name": "volt_set", "do": "set", "amount": 0 },
+            "text": "Set Voltage 0kV",
+            "event_dest": "uc"
+          },
+          {
+            "id": 3,
+            "visible": true,
+            "disable": false,
+            "action": { "name": "curr_set", "do": "set", "amount": 50 },
+            "text": "Set Current 50mA",
+            "event_dest": "uc"
+          },
+          {
+            "id": 4,
+            "visible": true,
+            "disable": false,
+            "action": { "name": "curr_set", "do": "set", "amount": 0 },
+            "text": "Set Current 0mA",
+            "event_dest": "uc"
+          },
+          {
+            "id": 5,
+            "visible": true,
+            "disable": false,
+            "action": { "name": "SW_GET_VERSION", "do": "get", "amount": 0 },
+            "text": "SW_GET_VERSION",
+            "event_dest": "linux"
+          }
+        ],
+        "labels": [
+          {
+            "id": 1,
+            "text": "Software Version:",
+            "visible": true,
+            "color": "white"
+          }
+        ],
+        "values": [
+          {
+            "id": 1,
+            "name": "SW_GET_VERSION",
+            "type": "float",
+            "display_format": "0x%08X",
+            "min_val": 0,
+            "max_val": 4294967295,
+            "upper_green_val": 0,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 0
+          }
+        ]
+
+      }
+    ],
+    "params_linux": {
+      "update_display_sensor_refresh_rate_ms": 100
+    }
+  },
+  "m4_data_polls": [
+    {
+      "poll_rpc_func": "volt_act", 
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "volt_act",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "volt_set", 
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "volt_set",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "curr_act", 
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "curr_act",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "curr_set", 
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "curr_set",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "inter_enable",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "inter_enable",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "extern_enable",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "extern_enable",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "warn_lamp",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "warn_lamp",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "ps_disable",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "ps_disable",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "pwm_enable",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "pwm_enable",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "pwm_reset",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "pwm_reset",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    }
+  ]
+}
