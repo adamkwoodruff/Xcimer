@@ -310,10 +310,10 @@
             "visible": true,
             "disable": false,
             "action": {
-              "name": "inter_enable",
+              "name": "ext_enable",
               "do": "toggle"
             },
-            "text": "Internal Enable",
+            "text": "External Enable",
             "event_dest": "uc"
           },
           {
@@ -324,32 +324,71 @@
               "name": "warn_lamp",
               "do": "toggle"
             },
-            "text": "Warning lamp test",
+            "text": "Warning Lamp",
+            "event_dest": "uc"
+          },
+          {
+            "id": 3,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "charger_relay",
+              "do": "toggle"
+            },
+            "text": "Charger Relay",
+            "event_dest": "uc"
+          },
+          {
+            "id": 4,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "dump_relay",
+              "do": "toggle"
+            },
+            "text": "Dump Relay",
+            "event_dest": "uc"
+          },
+          {
+            "id": 5,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "dump_fan",
+              "do": "toggle"
+            },
+            "text": "Dump Fan",
             "event_dest": "uc"
           }
         ],
         "labels": [
           {
             "id": 1,
-            "text": "Internal Enable:",
-            "visible": true,
-            "color": "white"
-          },
-          {
-            "id": 2,
             "text": "External Enable:",
             "visible": true,
             "color": "white"
           },
           {
-            "id": 3,
+            "id": 2,
             "text": "Warn Lamp:",
             "visible": true,
             "color": "white"
           },
           {
+            "id": 3,
+            "text": "Charger Relay:",
+            "visible": true,
+            "color": "white"
+          },
+          {
             "id": 4,
-            "text": "Output Enable:",
+            "text": "Dump Relay:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 5,
+            "text": "Dump Fan:",
             "visible": true,
             "color": "white"
           }
@@ -357,23 +396,19 @@
         "values": [
           {
             "id": 1,
-            "name": "inter_enable",
+            "name": "ext_enable",
             "type": "float",
             "display_format": "%.2f",
             "max_val": 1,
             "min_val": 0,
             "upper_green_val": 1,
             "lower_red_val": -1,
-            "upper_override_val": 2,
-            "upper_override_text": "OVER LIMIT",
-            "lower_override_val": -2,
-            "lower_override_text": "UNDER LIMIT",
             "default_color": "blue",
             "default_value": 0
           },
           {
             "id": 2,
-            "name": "extern_enable",
+            "name": "warn_lamp",
             "type": "float",
             "display_format": "%.2f",
             "max_val": 1,
@@ -381,27 +416,35 @@
             "upper_green_val": 1,
             "lower_red_val": -1,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           },
           {
             "id": 3,
-            "name": "warn_lamp",
+            "name": "charger_relay",
             "type": "float",
             "display_format": "%.2f",
             "max_val": 1,
             "min_val": 0,
-            "upper_green_val": 2,
-            "lower_red_val": -2,
-            "upper_override_val": 2,
-            "upper_override_text": "OVER LIMIT",
-            "lower_override_val": -2,
-            "lower_override_text": "UNDER LIMIT",
+            "upper_green_val": 1,
+            "lower_red_val": -1,
             "default_color": "blue",
             "default_value": 0
           },
           {
             "id": 4,
-            "name": "output_enable",
+            "name": "dump_relay",
+            "type": "float",
+            "display_format": "%.2f",
+            "max_val": 1,
+            "min_val": 0,
+            "upper_green_val": 1,
+            "lower_red_val": -1,
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 5,
+            "name": "dump_fan",
             "type": "float",
             "display_format": "%.2f",
             "max_val": 1,
@@ -635,10 +678,10 @@
           { "id": 2, "text": "COIL_CURRENT:", "visible": true, "color": "white" },
           { "id": 3, "text": "SYSTEM_TEMP:", "visible": true, "color": "white" },
           { "id": 4, "text": "IGBT_FAULT:", "visible": true, "color": "white" },
-          { "id": 5, "text": "EXTERNAL_ENABLE:", "visible": true, "color": "white" },
-          { "id": 6, "text": "CHARGER_RELAY_CTRL:", "visible": true, "color": "white" },
-          { "id": 7, "text": "DUMP_RELAY_CTRL:", "visible": true, "color": "white" },
-          { "id": 8, "text": "DUMP_FAN_RELAY_CTRL:", "visible": true, "color": "white" },
+          { "id": 5, "text": "EXT_ENABLE:", "visible": true, "color": "white" },
+          { "id": 6, "text": "CHARGER_RELAY:", "visible": true, "color": "white" },
+          { "id": 7, "text": "DUMP_RELAY:", "visible": true, "color": "white" },
+          { "id": 8, "text": "DUMP_FAN:", "visible": true, "color": "white" },
           { "id": 9, "text": "IGBT_PWM_HI:", "visible": true, "color": "white" },
           { "id": 10, "text": "SCR_TRIG:", "visible": true, "color": "white" },
           { "id": 11, "text": "SCR_INHIBIT:", "visible": true, "color": "white" },
@@ -651,14 +694,14 @@
           { "id": 2, "name": "COIL_CURRENT", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 100000, "upper_green_val": 100000, "lower_red_val": 0, "default_color": "blue", "default_value": 0 },
           { "id": 3, "name": "SYSTEM_TEMP", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 100000, "upper_green_val": 100000, "lower_red_val": 0, "default_color": "blue", "default_value": 0 },
           { "id": 4, "name": "IGBT_FAULT", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 5, "name": "EXTERNAL_ENABLE", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 6, "name": "CHARGER_RELAY_CTRL", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 7, "name": "DUMP_RELAY_CTRL", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 8, "name": "DUMP_FAN_RELAY_CTRL", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
+          { "id": 5, "name": "ext_enable", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
+          { "id": 6, "name": "charger_relay", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
+          { "id": 7, "name": "dump_relay", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
+          { "id": 8, "name": "dump_fan", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
           { "id": 9, "name": "IGBT_PWM_HI", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
           { "id": 10, "name": "SCR_TRIG", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
           { "id": 11, "name": "SCR_INHIBIT", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 12, "name": "WARN_LAMP", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
+          { "id": 12, "name": "warn_lamp", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
           { "id": 13, "name": "DAC_VOLTAGE_MON", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 100000, "upper_green_val": 100000, "lower_red_val": 0, "default_color": "blue", "default_value": 0 },
           { "id": 14, "name": "DAC_CURRENT_MON", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 100000, "upper_green_val": 100000, "lower_red_val": 0, "default_color": "blue", "default_value": 0 }
         ]
@@ -718,24 +761,12 @@
       }
     },
     {
-      "poll_rpc_func": "inter_enable",
+      "poll_rpc_func": "ext_enable",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
           "type": "set_value",
-          "name": "inter_enable",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-      "poll_rpc_func": "extern_enable",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "extern_enable",
+          "name": "ext_enable",
           "value": "{rpc_result}",
           "src": "uc"
         }
@@ -748,6 +779,42 @@
         "display_event": {
           "type": "set_value",
           "name": "warn_lamp",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "charger_relay",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "charger_relay",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "dump_relay",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "dump_relay",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "dump_fan",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "dump_fan",
           "value": "{rpc_result}",
           "src": "uc"
         }
@@ -838,54 +905,6 @@
       }
     },
     {
-      "poll_rpc_func": "EXTERNAL_ENABLE",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "EXTERNAL_ENABLE",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-      "poll_rpc_func": "CHARGER_RELAY_CTRL",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "CHARGER_RELAY_CTRL",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-      "poll_rpc_func": "DUMP_RELAY_CTRL",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "DUMP_RELAY_CTRL",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-      "poll_rpc_func": "DUMP_FAN_RELAY_CTRL",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "DUMP_FAN_RELAY_CTRL",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
       "poll_rpc_func": "IGBT_PWM_HI",
       "poll_interval_s": 0.5,
       "giga_json_template": {
@@ -916,18 +935,6 @@
         "display_event": {
           "type": "set_value",
           "name": "SCR_INHIBIT",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-      "poll_rpc_func": "WARN_LAMP",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "WARN_LAMP",
           "value": "{rpc_result}",
           "src": "uc"
         }
