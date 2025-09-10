@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">PSU Control Panel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+  
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      --panel-bg-color: #ffffff;
+      --text-color: #1e293b;
+      --text-muted-color: #64748b;
+      --border-color: #e2e8f0;
+      --value-bg-color: #f1f5f9;
+      --primary-color: #3b82f6;
+      --primary-hover-color: #2563eb;
+      --error-color: #ef4444;
+      --error-bg-color: rgba(239, 68, 68, 0.1);
+      --error-border-color: #ef4444;
+      --error-text-color: #b91c1c;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      margin: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    .container { max-width: 1280px; margin: 0 auto; padding: 1.5rem; }
+
+    header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      text-align: center;
+      margin-bottom: 2rem;
+      background-color: var(--panel-bg-color);
+      /* NEW: Add top border for mode indication */
+      border-top: 5px solid transparent; 
+      transition: border-top-color 0.3s ease-in-out;
+    }
+    
+    /* NEW: Header border color rules for each mode */
+    header.mode-remote { border-top-color: var(--primary-color); }
+    header.mode-local { border-top-color: var(--error-color); }
+
+    header h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+    
+    #mode-indicator {
+      margin-top: 0.5rem;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--text-muted-color);
+    }
+    #mode-indicator.remote { color: var(--primary-color); }
+    #mode-indicator.local { color: var(--error-color); }
+
+    .panel {
+      border: 1px solid var(--border-color); padding: 1.75rem; margin-bottom: 2rem;
+      background-color: var(--panel-bg-color); border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+      max-width: 896px; margin-left: auto; margin-right: auto;
+    }
+    .panel h3 {
+      margin-top: 0; font-size: 1.125rem; font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem; margin-bottom: 1.5rem;
+    }
+
+    .value-grid { display: grid; grid-template-columns: 180px 1fr; gap: 1rem 1.25rem; align-items: center; }
+    .value-label { text-align: right; font-weight: 500; color: var(--text-muted-color); font-size: 0.875rem; }
+    .value-field { padding: 0.6rem 1rem; background-color: var(--value-bg-color); border-radius: 8px; font-weight: 600; font-size: 1rem; color: #111827; border: 1px solid var(--border-color); min-height: 42px; }
+    .button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-top: 1.75rem; margin-bottom: 1.75rem; max-width: 688px; margin-left: auto; margin-right: auto; }
+
+    .btn-command {
+      padding: 0.75rem 1rem; font-size: 0.9rem; font-weight: 600; color: #ffffff;
+      background-color: var(--primary-color); border: none; border-radius: 8px; cursor: pointer;
+      text-align: center; transition: all 0.2s ease;
+      box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
+    }
+    .btn-command:hover { background-color: var(--primary-hover-color); transform: translateY(-2px); }
+    .btn-command:disabled { background-color: #9ca3af; cursor: not-allowed; transform: none; }
+
+	  .log-box { max-height: 240px; overflow-y: auto; background-color: #0f172a; color: #f1f5f9; font-family: monospace; font-size: 0.85rem; padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); }
+    .error-message { color: var(--error-text-color); text-align: center; padding: 1rem; background-color: var(--error-bg-color); border: 1px solid var(--error-border-color); border-radius: 8px; font-weight: 500; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="title">Loading Control Panel...</h1>
+    <div id="mode-indicator">Mode: Connecting...</div>
+  </header>
+  
+  <main class="container">
+    <div id="panels"></div>
+    <p class="error-message" id="error" style="display:none;"></p>
+    <div id="logContainerWrapper" class="panel">
+      <h3>System Logs</h3>
+      <div id="logContainer" class="log-box"></div>
+      <button id="downloadLogsBtn" class="btn-command" style="margin-top: 1rem;">Download Session Logs (.csv)</button>
+    </div>
+  </main>
+
+</body>
+</html>
