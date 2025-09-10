@@ -65,14 +65,8 @@ void setup() {
     }
 
     // Apply JSON values
-    if (doc.containsKey("volt_set"))        PowerState::setVoltage        = doc["volt_set"];
-    if (doc.containsKey("curr_set"))        PowerState::setCurrent        = doc["curr_set"];
-    if (doc.containsKey("inter_enable"))    PowerState::internalEnable    = doc["inter_enable"];
-    if (doc.containsKey("external_enable")) PowerState::externalEnable    = doc["external_enable"];
-    if (doc.containsKey("warn_lamp"))       PowerState::warnLampTestState = doc["warn_lamp"];
-    if (doc.containsKey("ps_disable"))      PowerState::psDisable         = doc["ps_disable"];
-    if (doc.containsKey("pwm_enable"))      PowerState::pwmEnable         = doc["pwm_enable"];
-    if (doc.containsKey("pwm_reset"))       PowerState::pwmResetActive    = doc["pwm_reset"];
+    if (doc.containsKey("volt_set")) PowerState::setVoltage = doc["volt_set"];
+    if (doc.containsKey("curr_set")) PowerState::setCurrent = doc["curr_set"];
 
     m4_status = M4_STATUS_SYNCED;
     m4_sync_done = true; 
