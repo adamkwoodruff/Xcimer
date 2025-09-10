@@ -7,7 +7,8 @@
 #include "IGBT.h"
 #include <ArduinoJson.h>
 #include <RPC.h>
-#include <string>
+#include <string> 
+#include "SerialRPC.h" 
 
 // --- Sync State Codes ---
 #define M4_STATUS_UNKNOWN         0x0000
@@ -22,45 +23,43 @@ bool m4_sync_status_logged = false;
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Portenta M4 Core Logic Starting...");
-  Serial.println("--------------------------------");
-  Serial.println("Initializing Modules...");
+  //Serial.println("Portenta M4 Core Logic Starting...");
+  //Serial.println("--------------------------------");
+  //Serial.println("Initializing Modules...");
 
   init_serial_comms();
-  Serial.println("Serial OK");
+  //Serial.println("Serial OK");
 
   init_voltage();
-  Serial.println("Voltage OK");
+  //Serial.println("Voltage OK");
 
   init_current();
-  Serial.println("Current OK");
+  //Serial.println("Current OK");
 
   init_enable_control();  
-  Serial.println("Enable Control OK");
-  analogReadResolution(12);   // ensures 0..4095
-
+  //Serial.println("Enable Control OK");
 
   // --- RPC Setup ---
   RPC.bind("get_sync_status", []() -> uint16_t {
     uint16_t status = m4_sync_done ? M4_STATUS_SYNCED : M4_STATUS_NOT_SYNCED;
     Serial.print("[SYNC] Status Check → ");
-    Serial.println(status, HEX);
+    //Serial.println(status, HEX);
     return status;
   });
 
   RPC.bind("set_truth_table", [](const std::string& jsonString) {
     if (m4_sync_done) return;
 
-    Serial.println("0xA0B0 - Ready – NOT synchronized");
+    //Serial.println("0xA0B0 - Ready – NOT synchronized");
 
     m4_status = M4_STATUS_SYNCHRONISING;
-    Serial.println("0xA0B1 - Synchronising");
+    //Serial.println("0xA0B1 - Synchronising");
 
     StaticJsonDocument<512> doc;
     DeserializationError err = deserializeJson(doc, jsonString);
     if (err) {
       Serial.print("0xA0FF - JSON Error: ");
-      Serial.println(err.c_str());
+      //Serial.println(err.c_str());
       m4_status = M4_STATUS_ERROR;
       return;
     }
@@ -77,20 +76,20 @@ void setup() {
 
     m4_status = M4_STATUS_SYNCED;
     m4_sync_done = true; 
-    Serial.println("0xA0B2 - Ready Synchronised");
+    //Serial.println("0xA0B2 - Ready Synchronised");
   });
 
   RPC.bind("has_sync_completed", []() -> bool {
     return m4_sync_done; 
   });
 
-  Serial.println("RPC bindings OK");
+  //Serial.println("RPC bindings OK");
 
   init_igbt_pwm();
-  Serial.println("PWM OK"); 
+  //Serial.println("PWM OK"); 
 
-  Serial.println("--------------------------------");
-  Serial.println("Setup Complete. Entering main loop.");
+  //Serial.println("--------------------------------");
+  //Serial.println("Setup Complete. Entering main loop.");
 }
 
 void loop() {
@@ -99,14 +98,14 @@ void loop() {
   update_enable_inputs();   
   update_enable_outputs();  
   update_igbt_pwm();
-  delayMicroseconds(1000);
+  delayMicroseconds(500);
 
   // Sync status output
   if (!m4_sync_done) {
-    Serial.println("0xA0B0 - Ready – NOT synchronized");
+    //Serial.println("0xA0B0 - Ready – NOT synchronized");
     delay(1000);  // once per second
   } else if (!m4_sync_status_logged) {
-    Serial.println("0xA0B2 - Ready – SYNCHRONIZED");
+    //Serial.println("0xA0B2 - Ready – SYNCHRONIZED");
     m4_sync_status_logged = true;
   }
 }
