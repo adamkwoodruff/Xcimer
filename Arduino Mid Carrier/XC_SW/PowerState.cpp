@@ -1,20 +1,21 @@
 #include "PowerState.h"
 
-volatile float PowerState::setVoltage = 0.0f;
-volatile float PowerState::setCurrent = 0.0f;
+// Initialise static members
+volatile float PowerState::setVoltage        = 0.0f;
+volatile float PowerState::setCurrent        = 0.0f;
 volatile float PowerState::probeVoltageOutput = 0.0f;
-volatile float PowerState::probeCurrent = 0.0f;
+volatile float PowerState::probeCurrent      = 0.0f;
 
-volatile bool PowerState::internalEnable = false;
-volatile bool PowerState::externalEnable = false;
-volatile bool PowerState::outputEnabled  = false;
+volatile bool  PowerState::igbtFault         = false;
+volatile bool  PowerState::extEnable         = false;
 
-volatile bool PowerState::warnLampTestState = false;
-unsigned long PowerState::lastWarnBlinkTimeMs = 0;
-bool PowerState::warnLampOn = false;
+volatile bool  PowerState::chargerRelay      = false;
+volatile bool  PowerState::dumpRelay         = false;
+volatile bool  PowerState::dumpFan           = false;
+volatile bool  PowerState::warnLamp          = false;
+volatile bool  PowerState::scrTrig_cmd       = false;
+volatile bool  PowerState::scrInhibit_allow  = false;
 
-volatile bool PowerState::psDisable      = true;
-volatile bool PowerState::pwmEnable      = false;
-volatile bool PowerState::pwmResetActive = false;
-volatile bool PowerState::faultLockout   = false;
-unsigned long PowerState::pwmResetEndMs  = 0;
+volatile float PowerState::measVoltagePwmDuty = 0.0f;
+volatile float PowerState::measCurrentPwmDuty = 0.0f;
+

@@ -46,14 +46,15 @@ TRUE_VALUES = {
     "curr_set": 0.0,
     "volt_act": 0.0,
     "curr_act": 0.0,
-    "inter_enable": 0.0,
-    "extern_enable": 1.0,
-    "output_enable": 0.0,
+    "igbt_fault": 0.0,
+    "ext_enable": 0.0,
+    "charger_relay": 0.0,
+    "dump_relay": 0.0,
+    "dump_fan": 0.0,
     "warn_lamp": 0.0,
-    "ps_disable": 1.0,
-    "pwm_enable": 0.0,
-    "pwm_reset": 0.0,
-    "mode_set": 0.0,
+    "scr_trig": 0.0,
+    "meas_voltage_pwm": 0.0,
+    "meas_current_pwm": 0.0,
 }
 # Store latest RPC results by name (e.g. "rpc_result_volt_set" -> value)
 RPC_RESULTS = {}
@@ -71,21 +72,21 @@ SIGNAL_IDS = {
     "curr_set": 0x05,
     "volt_act": 0x06,
     "curr_act": 0x07,
-    "mode_set": 0x08,
-    "inter_enable": 0x09,
-    "extern_enable": 0x0A,
-    "warn_lamp": 0x0B,
-    "ps_disable": 0x0C,
-    "pwm_enable": 0x0D,
-    "pwm_reset": 0x0E,
-    "output_enable": 0x0F,
+    "igbt_fault": 0x08,
+    "ext_enable": 0x09,
+    "charger_relay": 0x0A,
+    "dump_relay": 0x0B,
+    "dump_fan": 0x0C,
+    "warn_lamp": 0x0D,
+    "scr_trig": 0x0E,
+    "meas_voltage_pwm": 0x0F,
+    "meas_current_pwm": 0x10,
 }
 
 EXPECTED_TYPES = {
     "volt_act": (float, int),
     "curr_act": (float, int),
-    "extern_enable": (int, bool),
-    "inter_enable": (int, bool),
+    "ext_enable": (int, bool),
     "has_sync_completed": (int, bool),
     "process_event_in_uc": (int, type(None)),  # often returns ack int or None
 }
@@ -145,13 +146,13 @@ def log_pid_sample(time_ms: int, set_current: float, duty: float) -> None:
 # Signals that represent boolean values. When a toggle operation is requested
 # their current state will be inverted regardless of any provided increment
 # value.
-BOOL_NAMES = { 
-    "extern_enable",
-    "inter_enable",
+BOOL_NAMES = {
+    "ext_enable",
+    "charger_relay",
+    "dump_relay",
+    "dump_fan",
     "warn_lamp",
-    "ps_disable",
-    "pwm_enable",
-    "pwm_reset",
+    "scr_trig",
 }
 
 
@@ -256,12 +257,11 @@ def push_truth_table_to_m4():
         truth_subset = {
             "volt_set": get_signal_value("volt_set"),
             "curr_set": get_signal_value("curr_set"),
-            "inter_enable": bool(get_signal_value("inter_enable")),
-            "extern_enable": bool(get_signal_value("extern_enable")),
+            "ext_enable": bool(get_signal_value("ext_enable")),
             "warn_lamp": bool(get_signal_value("warn_lamp")),
-            "ps_disable": bool(get_signal_value("ps_disable")),
-            "pwm_enable": bool(get_signal_value("pwm_enable")),
-            "pwm_reset": bool(get_signal_value("pwm_reset")),
+            "charger_relay": bool(get_signal_value("charger_relay")),
+            "dump_relay": bool(get_signal_value("dump_relay")),
+            "dump_fan": bool(get_signal_value("dump_fan")),
         }
 
     try:
@@ -371,7 +371,7 @@ def call_m4_rpc(function_name, *args, retries=1, timeout=0.05):
                     result = float(result)
                     print(f"[RPC~ ] {_tname} {function_name} COERCE int->float -> {result}")
 
-                if function_name in ("extern_enable", "inter_enable", "has_sync_completed"):
+                if function_name in ("ext_enable", "has_sync_completed"):
                     result = bool(result)
                     print(f"[RPC~ ] {_tname} {function_name} COERCE -> bool -> {result}")
 
@@ -580,12 +580,13 @@ def log_all_configurable_values():
 
 def update_and_broadcast(name, value, src="linux"):
     with DATA_LOCK:
-        if name in ("volt_set", "curr_set", "inter_enable",  "warn_lamp", "ps_disable","pwm_enable", "pwm_reset", "mode_set",) and value < 0:
+        if name in ("volt_set", "curr_set", "warn_lamp") and value < 0:
             value = 0
         if name in (
             "volt_act",
-            "curr_act",       
-            "extern_enable",   
+            "curr_act",
+            "ext_enable",
+            "igbt_fault",
         ) and src == "udp":
             print(f"[Store] Skipping update of {name} from UDP (M4-owned).")
             return
@@ -1059,11 +1060,7 @@ def poll_m4_signals():
 
         update_and_broadcast("volt_act", round(volt, 2), src="rpc")
         update_and_broadcast("curr_act", round(curr, 2), src="rpc")
-        update_and_broadcast("extern_enable", int(ext_en), src="rpc")
-
-        inter_val = get_signal_value("inter_enable")
-        out = 1 if inter_val and ext_en else 0
-        update_and_broadcast("output_enable", out, src="logic")  
+        update_and_broadcast("ext_enable", int(ext_en), src="rpc")
         
 
 def verify_m4_rpc_bindings():
@@ -1073,12 +1070,11 @@ def verify_m4_rpc_bindings():
         truth_subset = {
             "volt_set": get_signal_value("volt_set"),
             "curr_set": get_signal_value("curr_set"),
-            "inter_enable": bool(get_signal_value("inter_enable")),
-            "extern_enable": bool(get_signal_value("extern_enable")),
+            "ext_enable": bool(get_signal_value("ext_enable")),
             "warn_lamp": bool(get_signal_value("warn_lamp")),
-            "ps_disable": bool(get_signal_value("ps_disable")),
-            "pwm_enable": bool(get_signal_value("pwm_enable")),
-            "pwm_reset": bool(get_signal_value("pwm_reset")),
+            "charger_relay": bool(get_signal_value("charger_relay")),
+            "dump_relay": bool(get_signal_value("dump_relay")),
+            "dump_fan": bool(get_signal_value("dump_fan")),
         }
     noop_evt = json.dumps({"display_event": {"name": "noop", "value": 0}})
     truth_json = json.dumps(truth_subset)
@@ -1090,8 +1086,8 @@ def verify_m4_rpc_bindings():
         ("set_truth_table",    (truth_json,)),
         ("volt_act",           ()),
         ("curr_act",           ()),
-        ("extern_enable",      ()),
-        ("inter_enable",       ()),
+        ("ext_enable",      ()),
+        ("igbt_fault",       ()),
         # add/remove bindings as needed
     ]
 
