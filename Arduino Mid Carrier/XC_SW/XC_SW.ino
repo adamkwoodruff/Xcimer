@@ -8,7 +8,7 @@
 #include <ArduinoJson.h>
 #include <RPC.h>
 #include <string> 
-#include "SerialRPC.h"  
+#include "SerialRPC.h" 
 
 // --- Sync State Codes ---
 #define M4_STATUS_UNKNOWN         0x0000
@@ -19,9 +19,7 @@
 
 volatile bool m4_sync_done = false;
 volatile uint16_t m4_status = M4_STATUS_NOT_SYNCED; 
-bool m4_sync_status_logged = false; 
-
-
+bool m4_sync_status_logged = false;
 
 void setup() {
   Serial.begin(115200);
@@ -30,7 +28,7 @@ void setup() {
   //Serial.println("Initializing Modules...");
 
   init_serial_comms();
-  //Serial.println("Serial OK"); 
+  //Serial.println("Serial OK");
 
   init_voltage();
   //Serial.println("Voltage OK");
@@ -86,7 +84,7 @@ void setup() {
 
   //Serial.println("--------------------------------");
   //Serial.println("Setup Complete. Entering main loop.");
-} 
+}
 
 void loop() {
   update_voltage();
