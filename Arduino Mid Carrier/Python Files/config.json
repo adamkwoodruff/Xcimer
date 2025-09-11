@@ -41,7 +41,7 @@
               "do": "set",
               "amount": 3
             },
-            "text": "PWM Control",
+            "text": "Charger Control",
             "event_dest": "uc"
           },
           {
@@ -49,11 +49,11 @@
             "visible": true,
             "disable": false,
             "action": {
-              "name": "allow_display_adjustment",
+              "name": "display_panel_id",
               "do": "set",
-              "amount": 1
+              "amount": 4
             },
-            "text": "Toggle UI Lock",
+            "text": "SCR Control",
             "event_dest": "uc"
           },
           {
@@ -63,7 +63,7 @@
             "action": {
               "name": "display_panel_id",
               "do": "set",
-              "amount": 4
+              "amount": 5
             },
             "text": "Test",
             "event_dest": "uc"
@@ -310,10 +310,10 @@
             "visible": true,
             "disable": false,
             "action": {
-              "name": "ext_enable",
+              "name": "inter_enable",
               "do": "toggle"
             },
-            "text": "External Enable",
+            "text": "Internal Enable",
             "event_dest": "uc"
           },
           {
@@ -324,71 +324,32 @@
               "name": "warn_lamp",
               "do": "toggle"
             },
-            "text": "Warning Lamp",
-            "event_dest": "uc"
-          },
-          {
-            "id": 3,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "charger_relay",
-              "do": "toggle"
-            },
-            "text": "Charger Relay",
-            "event_dest": "uc"
-          },
-          {
-            "id": 4,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "dump_relay",
-              "do": "toggle"
-            },
-            "text": "Dump Relay",
-            "event_dest": "uc"
-          },
-          {
-            "id": 5,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "dump_fan",
-              "do": "toggle"
-            },
-            "text": "Dump Fan",
+            "text": "Warning lamp test",
             "event_dest": "uc"
           }
         ],
         "labels": [
           {
             "id": 1,
-            "text": "External Enable:",
+            "text": "Internal Enable:",
             "visible": true,
             "color": "white"
           },
           {
             "id": 2,
-            "text": "Warn Lamp:",
+            "text": "External Enable:",
             "visible": true,
             "color": "white"
           },
           {
             "id": 3,
-            "text": "Charger Relay:",
+            "text": "Warn Lamp:",
             "visible": true,
             "color": "white"
           },
           {
             "id": 4,
-            "text": "Dump Relay:",
-            "visible": true,
-            "color": "white"
-          },
-          {
-            "id": 5,
-            "text": "Dump Fan:",
+            "text": "Output Enable:",
             "visible": true,
             "color": "white"
           }
@@ -396,55 +357,51 @@
         "values": [
           {
             "id": 1,
-            "name": "ext_enable",
+            "name": "inter_enable",
             "type": "float",
             "display_format": "%.2f",
             "max_val": 1,
             "min_val": 0,
             "upper_green_val": 1,
             "lower_red_val": -1,
+            "upper_override_val": 2,
+            "upper_override_text": "OVER LIMIT",
+            "lower_override_val": -2,
+            "lower_override_text": "UNDER LIMIT",
             "default_color": "blue",
             "default_value": 0
           },
           {
             "id": 2,
+            "name": "external_enable",
+            "type": "float",
+            "display_format": "%.2f",
+            "max_val": 1,
+            "min_val": 0,
+            "upper_green_val": 1,
+            "lower_red_val": -1,
+            "default_color": "blue",
+            "default_value": 1
+          },
+          {
+            "id": 3,
             "name": "warn_lamp",
             "type": "float",
             "display_format": "%.2f",
             "max_val": 1,
             "min_val": 0,
-            "upper_green_val": 1,
-            "lower_red_val": -1,
-            "default_color": "blue",
-            "default_value": 0
-          },
-          {
-            "id": 3,
-            "name": "charger_relay",
-            "type": "float",
-            "display_format": "%.2f",
-            "max_val": 1,
-            "min_val": 0,
-            "upper_green_val": 1,
-            "lower_red_val": -1,
+            "upper_green_val": 2,
+            "lower_red_val": -2,
+            "upper_override_val": 2,
+            "upper_override_text": "OVER LIMIT",
+            "lower_override_val": -2,
+            "lower_override_text": "UNDER LIMIT",
             "default_color": "blue",
             "default_value": 0
           },
           {
             "id": 4,
-            "name": "dump_relay",
-            "type": "float",
-            "display_format": "%.2f",
-            "max_val": 1,
-            "min_val": 0,
-            "upper_green_val": 1,
-            "lower_red_val": -1,
-            "default_color": "blue",
-            "default_value": 0
-          },
-          {
-            "id": 5,
-            "name": "dump_fan",
+            "name": "output_enable",
             "type": "float",
             "display_format": "%.2f",
             "max_val": 1,
@@ -457,19 +414,19 @@
         ]
       },
       {
-        "id": 3,
+        "id": 4,
         "type": "control",
-        "title": "PWM Control",
+        "title": "SCR Control",
         "buttons": [
           {
             "id": 1,
             "visible": true,
             "disable": false,
             "action": {
-              "name": "ps_disable",
+              "name": "scr_inhib",
               "do": "toggle"
             },
-            "text": "Toggle PS Disable",
+            "text": "SCR Inhibit",
             "event_dest": "uc"
           },
           {
@@ -477,10 +434,80 @@
             "visible": true,
             "disable": false,
             "action": {
-              "name": "pwm_enable",
+              "name": "scr_trig",
               "do": "toggle"
             },
-            "text": "Toggle PWM Enable",
+            "text": "SCR Trigger",
+            "event_dest": "uc"
+          } 
+        ],
+        "labels": [
+          {
+            "id": 1,
+            "text": "SCR Inhibit:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 3,
+            "text": "SCR Trigger:",
+            "visible": true,
+            "color": "white"
+          }
+        ],
+        "values": [
+          {
+            "id": 1,
+            "name": "scr_inhib",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 3,
+            "name": "scr_trig",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 0
+          }
+        ]
+      }
+      , 
+            {
+        "id": 3,
+        "type": "control",
+        "title": "Charger Control",
+        "buttons": [
+          {
+            "id": 1,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "dump_fan",
+              "do": "toggle"
+            },
+            "text": "Toggle Dump Fan",
+            "event_dest": "uc"
+          },
+          {
+            "id": 2,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "dump_relay",
+              "do": "toggle"
+            },
+            "text": "Toggle Dump Relay",
             "event_dest": "uc"
           },
           {
@@ -488,10 +515,10 @@
             "visible": true,
             "disable": false,
             "action": {
-              "name": "pwm_reset",
+              "name": "charger_relay",
               "do": "toggle"
             },
-            "text": "Toggle PWM Reset",
+            "text": "Toggle Charger Relay",
             "event_dest": "uc"
           },
           {
@@ -522,19 +549,19 @@
         "labels": [
           {
             "id": 1,
-            "text": "PS Disable:",
+            "text": "Dump Fan:",
             "visible": true,
             "color": "white"
           },
           {
             "id": 3,
-            "text": "PWM Enable:",
+            "text": "Dump Relay:",
             "visible": true,
             "color": "white"
           },
           {
             "id": 5,
-            "text": "PWM Reset:",
+            "text": "Charger Relay:",
             "visible": true,
             "color": "white"
           },
@@ -548,7 +575,7 @@
         "values": [
           {
             "id": 1,
-            "name": "ps_disable",
+            "name": "dump_fan",
             "type": "float",
             "display_format": "%.0f",
             "min_val": 0,
@@ -556,11 +583,11 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           },
           {
             "id": 3,
-            "name": "pwm_enable",
+            "name": "dump_relay",
             "type": "float",
             "display_format": "%.0f",
             "min_val": 0,
@@ -572,7 +599,7 @@
           },
           {
             "id": 5,
-            "name": "pwm_reset",
+            "name": "charger_relay",
             "type": "float",
             "display_format": "%.0f",
             "min_val": 0,
@@ -595,10 +622,9 @@
             "default_value": 0
           }
         ]
-      }
-      ,
+      },
       {
-        "id": 4,
+        "id": 5,
         "type": "control",
         "title": "Test",
         "buttons": [
@@ -667,48 +693,9 @@
         ]
 
       }
-    ,
-      {
-        "id": 5,
-        "type": "control",
-        "title": "System Variables",
-        "buttons": [],
-        "labels": [
-          { "id": 1, "text": "CAP_VOLTAGE:", "visible": true, "color": "white" },
-          { "id": 2, "text": "COIL_CURRENT:", "visible": true, "color": "white" },
-          { "id": 3, "text": "SYSTEM_TEMP:", "visible": true, "color": "white" },
-          { "id": 4, "text": "IGBT_FAULT:", "visible": true, "color": "white" },
-          { "id": 5, "text": "EXT_ENABLE:", "visible": true, "color": "white" },
-          { "id": 6, "text": "CHARGER_RELAY:", "visible": true, "color": "white" },
-          { "id": 7, "text": "DUMP_RELAY:", "visible": true, "color": "white" },
-          { "id": 8, "text": "DUMP_FAN:", "visible": true, "color": "white" },
-          { "id": 9, "text": "IGBT_PWM_HI:", "visible": true, "color": "white" },
-          { "id": 10, "text": "SCR_TRIG:", "visible": true, "color": "white" },
-          { "id": 11, "text": "SCR_INHIBIT:", "visible": true, "color": "white" },
-          { "id": 12, "text": "WARN_LAMP:", "visible": true, "color": "white" },
-          { "id": 13, "text": "DAC_VOLTAGE_MON:", "visible": true, "color": "white" },
-          { "id": 14, "text": "DAC_CURRENT_MON:", "visible": true, "color": "white" }
-        ],
-        "values": [
-          { "id": 1, "name": "CAP_VOLTAGE", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 100000, "upper_green_val": 100000, "lower_red_val": 0, "default_color": "blue", "default_value": 0 },
-          { "id": 2, "name": "COIL_CURRENT", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 100000, "upper_green_val": 100000, "lower_red_val": 0, "default_color": "blue", "default_value": 0 },
-          { "id": 3, "name": "SYSTEM_TEMP", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 100000, "upper_green_val": 100000, "lower_red_val": 0, "default_color": "blue", "default_value": 0 },
-          { "id": 4, "name": "IGBT_FAULT", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 5, "name": "ext_enable", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 6, "name": "charger_relay", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 7, "name": "dump_relay", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 8, "name": "dump_fan", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 9, "name": "IGBT_PWM_HI", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 10, "name": "SCR_TRIG", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 11, "name": "SCR_INHIBIT", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 12, "name": "warn_lamp", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 1, "upper_green_val": 1, "lower_red_val": -1, "default_color": "blue", "default_value": 0 },
-          { "id": 13, "name": "DAC_VOLTAGE_MON", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 100000, "upper_green_val": 100000, "lower_red_val": 0, "default_color": "blue", "default_value": 0 },
-          { "id": 14, "name": "DAC_CURRENT_MON", "type": "float", "display_format": "%.2f", "min_val": 0, "max_val": 100000, "upper_green_val": 100000, "lower_red_val": 0, "default_color": "blue", "default_value": 0 }
-        ]
-      }
     ],
     "params_linux": {
-      "update_display_sensor_refresh_rate_ms": 100
+      "update_display_sensor_refresh_rate_ms": 10
     }
   },
   "m4_data_polls": [
@@ -761,12 +748,24 @@
       }
     },
     {
-      "poll_rpc_func": "ext_enable",
+      "poll_rpc_func": "inter_enable",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
           "type": "set_value",
-          "name": "ext_enable",
+          "name": "inter_enable",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "extern_enable",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "external_enable",
           "value": "{rpc_result}",
           "src": "uc"
         }
@@ -785,12 +784,12 @@
       }
     },
     {
-      "poll_rpc_func": "charger_relay",
+      "poll_rpc_func": "dump_fan",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
           "type": "set_value",
-          "name": "charger_relay",
+          "name": "dump_fan",
           "value": "{rpc_result}",
           "src": "uc"
         }
@@ -808,157 +807,37 @@
         }
       }
     },
-    {
-      "poll_rpc_func": "dump_fan",
+     {
+      "poll_rpc_func": "scr_inhib",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
           "type": "set_value",
-          "name": "dump_fan",
+          "name": "scr_inhib",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    }, 
+     {
+      "poll_rpc_func": "scr_trig",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "scr_trig",
           "value": "{rpc_result}",
           "src": "uc"
         }
       }
     },
     {
-      "poll_rpc_func": "ps_disable",
+      "poll_rpc_func": "charger_relay",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
           "type": "set_value",
-          "name": "ps_disable",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-      "poll_rpc_func": "pwm_enable",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "pwm_enable",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-      "poll_rpc_func": "pwm_reset",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "pwm_reset",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-        "poll_rpc_func": "cap_voltage",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "CAP_VOLTAGE",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-        "poll_rpc_func": "coil_current",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "COIL_CURRENT",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-        "poll_rpc_func": "system_temp",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "SYSTEM_TEMP",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-        "poll_rpc_func": "igbt_fault",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "IGBT_FAULT",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-        "poll_rpc_func": "igbt_pwm_hi",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "IGBT_PWM_HI",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-        "poll_rpc_func": "scr_trig",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "SCR_TRIG",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-        "poll_rpc_func": "scr_inhibit",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "SCR_INHIBIT",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-        "poll_rpc_func": "dac_voltage_mon",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "DAC_VOLTAGE_MON",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
-    },
-    {
-        "poll_rpc_func": "dac_current_mon",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "DAC_CURRENT_MON",
+          "name": "charger_relay",
           "value": "{rpc_result}",
           "src": "uc"
         }
