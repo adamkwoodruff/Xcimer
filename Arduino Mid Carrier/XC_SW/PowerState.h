@@ -3,30 +3,30 @@
 
 #include "Config.h"
 
-// Centralized container for system run-time state and commands.
 struct PowerState {
-    // Setpoints and measured values
     static volatile float setVoltage;
     static volatile float setCurrent;
     static volatile float probeVoltageOutput;
     static volatile float probeCurrent;
 
-    // Digital inputs
-    static volatile bool igbtFault;   // true = fault asserted
-    static volatile bool extEnable;   // external enable line state
+    // Enable logic
+    static volatile bool internalEnable;   // Set via UI or logic
+    static volatile bool externalEnable;   // Sampled from digital input
+    static volatile bool outputEnabled;    // True only when both enables are HIGH
 
-    // Commanded outputs
-    static volatile bool chargerRelay;
-    static volatile bool dumpRelay;
-    static volatile bool dumpFan;
-    static volatile bool warnLamp;
-    static volatile bool scrTrig_cmd;       // edge command
-    static volatile bool scrInhibit_allow;  // when true, SCR_INHIBIT can be driven LOW
+    // Warning lamp
+    static volatile bool warnLampTestState;
+    static unsigned long lastWarnBlinkTimeMs;
+    static bool warnLampOn;
+    static volatile bool faultLockout;
+   
+    static volatile bool DumpFan;
+    static volatile bool DumpRelay;
+    static volatile bool ChargerRelay; 
 
-    // Telemetry of PWM-DAC outputs (0.0-1.0 duty)
-    static volatile float measVoltagePwmDuty;
-    static volatile float measCurrentPwmDuty;
+    static volatile bool ScrTrig;
+    static volatile bool ScrInhib;
+
 };
 
 #endif // POWERSTATE_H
-

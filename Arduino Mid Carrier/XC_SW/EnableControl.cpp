@@ -1,72 +1,93 @@
 #include "EnableControl.h"
 #include "PowerState.h"
-#include "Config.h"
-
-static inline void writePin(const PinDef &def, bool state) {
-    digitalWrite(def.pin, (state == def.active_high) ? HIGH : LOW);
-}
 
 void init_enable_control() {
-    // Configure digital inputs
-    pinMode(IGBT_FAULT_IN.pin, IGBT_FAULT_IN.active_high ? INPUT_PULLDOWN : INPUT_PULLUP);
-    pinMode(EXT_ENABLE_IN.pin, EXT_ENABLE_IN.active_high ? INPUT_PULLDOWN : INPUT_PULLUP);
+  pinMode(DPIN_ENABLE_IN, HW_INPUT_PIN_MODE);    // External enable input
+  // Initialize control outputs to match stored state
+  pinMode(DPIN_WARN_LAMP_OUT, OUTPUT);           // Warning lamp output
+  digitalWrite(DPIN_WARN_LAMP_OUT, HIGH); 
 
-    // Configure digital outputs with safe states
-    pinMode(CHARGER_RELAY_CTRL.pin, OUTPUT);
-    pinMode(DUMP_RELAY_CTRL.pin, OUTPUT);
-    pinMode(DUMP_FAN_RELAY_CTRL.pin, OUTPUT);
-    pinMode(SCR_TRIG.pin, OUTPUT);
-    pinMode(SCR_INHIBIT.pin, OUTPUT);
-    pinMode(WARN_LAMP.pin, OUTPUT);
+  pinMode(DUMP_FAN, OUTPUT);
+  pinMode(DUMP_RELAY, OUTPUT);
+  pinMode(CHARGER_RELAY, OUTPUT);
 
-    // Safe states at boot
-    writePin(CHARGER_RELAY_CTRL, false);
-    writePin(DUMP_RELAY_CTRL, false);
-    writePin(DUMP_FAN_RELAY_CTRL, false);
-    writePin(SCR_TRIG, false);
-    writePin(SCR_INHIBIT, true);   // inhibit active
-    writePin(WARN_LAMP, false);
+  digitalWrite(DUMP_FAN, LOW);
+  digitalWrite(DUMP_RELAY, LOW);
+  digitalWrite(CHARGER_RELAY, LOW); 
 
-    // PWM outputs start at 0 duty
-    pinMode(PWM_IGBT_HI, OUTPUT);
-    pinMode(PWM_MEAS_VOLTAGE, OUTPUT);
-    pinMode(PWM_MEAS_CURRENT, OUTPUT);
-    analogWrite(PWM_IGBT_HI, 0);
-    analogWrite(PWM_MEAS_VOLTAGE, 0);
-    analogWrite(PWM_MEAS_CURRENT, 0);
+  pinMode(SCR_TRIG, OUTPUT);
+  pinMode(SCR_INHIB, OUTPUT);
+
+  digitalWrite(SCR_TRIG, LOW);
+  digitalWrite(SCR_INHIB, LOW);
+
 }
 
 void update_enable_inputs() {
-    PowerState::igbtFault = (digitalRead(IGBT_FAULT_IN.pin) == (IGBT_FAULT_IN.active_high ? HIGH : LOW));
-    PowerState::extEnable = (digitalRead(EXT_ENABLE_IN.pin) == (EXT_ENABLE_IN.active_high ? HIGH : LOW));
+  // Sample external enable input (debounce if needed)
+  PowerState::externalEnable = (digitalRead(DPIN_ENABLE_IN) == HW_INPUT_ACTIVE_STATE);
+
+  // Combined logic: both internal and external must be true
+  PowerState::outputEnabled = PowerState::externalEnable && PowerState::internalEnable;
 }
 
 void update_enable_outputs() {
-    // Warning lamp uses PowerState::warnLamp directly
-    writePin(CHARGER_RELAY_CTRL, PowerState::chargerRelay);
-    writePin(DUMP_RELAY_CTRL, PowerState::dumpRelay);
-    writePin(DUMP_FAN_RELAY_CTRL, PowerState::dumpFan);
-    writePin(WARN_LAMP, PowerState::warnLamp);
+  unsigned long now_ms = millis();
 
-    // SCR inhibit: high = inhibit. Allow low only when scrInhibit_allow true.
-    writePin(SCR_INHIBIT, !PowerState::scrInhibit_allow);
-
-    // SCR trigger pulse generation
-    static unsigned long pulseEndUs = 0;
-    unsigned long nowUs = micros();
-    if (PowerState::scrTrig_cmd) {
-        writePin(SCR_TRIG, true);
-        pulseEndUs = nowUs + 10; // 10us pulse
-        PowerState::scrTrig_cmd = false;
-    }
-    if (pulseEndUs && nowUs > pulseEndUs) {
-        writePin(SCR_TRIG, false);
-        pulseEndUs = 0;
+  if (PowerState::probeVoltageOutput >= WARN_VOLTAGE_THRESHOLD) {
+    // Blink the warning lamp when the output voltage is above the threshold
+    if (now_ms - PowerState::lastWarnBlinkTimeMs >= WARN_BLINK_INTERVAL_MS) {
+      PowerState::lastWarnBlinkTimeMs = now_ms;
+      PowerState::warnLampOn = !PowerState::warnLampOn;
+      digitalWrite(DPIN_WARN_LAMP_OUT, PowerState::warnLampOn ? HIGH : LOW); // does not need to be changed
     }
 
-    // Update PWM-DAC outputs based on duty (0..1)
-    uint32_t maxCount = (1u << IGBT_PWM_RESOLUTION_BITS) - 1u;
-    analogWrite(PWM_MEAS_VOLTAGE, (uint32_t)(PowerState::measVoltagePwmDuty * maxCount));
-    analogWrite(PWM_MEAS_CURRENT, (uint32_t)(PowerState::measCurrentPwmDuty * maxCount));
+  } else if (PowerState::warnLampTestState) {
+    // Test button pressed - force the lamp on
+    PowerState::warnLampOn = true;
+    digitalWrite(DPIN_WARN_LAMP_OUT, LOW);
+
+  } else {
+    // Neither condition active - ensure the lamp stays off
+    PowerState::warnLampOn = false;
+    digitalWrite(DPIN_WARN_LAMP_OUT, HIGH);
+  } 
+
+  digitalWrite(DUMP_FAN,      PowerState::DumpFan      ? HIGH : LOW);
+  digitalWrite(DUMP_RELAY,    PowerState::DumpRelay    ? HIGH : LOW);
+  digitalWrite(CHARGER_RELAY, PowerState::ChargerRelay ? HIGH : LOW); 
+  digitalWrite(SCR_TRIG,  PowerState::ScrTrig  ? HIGH : LOW);
+  digitalWrite(SCR_INHIB, PowerState::ScrInhib ? HIGH : LOW);
+
+
+
+}
+
+int get_output_enable_state() {
+  return PowerState::outputEnabled ? 1 : 0;
+} 
+
+int dump_fan(int state) {
+  digitalWrite(DUMP_FAN, (state != 0) ? HIGH : LOW);
+  return 1;
+}
+
+int dump_relay(int state) {
+  digitalWrite(DUMP_RELAY, (state != 0) ? HIGH : LOW);
+  return 1;
+}
+
+int charger_relay(int state) {
+  digitalWrite(CHARGER_RELAY, (state != 0) ? HIGH : LOW);
+  return 1;
+} 
+
+int scr_trig(int state) {
+    digitalWrite(SCR_TRIG, (state != 0) ? HIGH : LOW);
+    return PowerState::ScrTrig ? 1 : 0;
+}
+int scr_inhib(int state) {
+    digitalWrite(SCR_INHIB, (state != 0) ? HIGH : LOW);
+    return 1;
 }
 
