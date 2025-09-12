@@ -13,6 +13,9 @@ void update_enable_inputs();
 void update_enable_outputs();
 
 // RPC-compatible getter for the enable state (returns 0 or 1)
-int get_output_enable_state();
+int get_output_enable_state();  
+
+int scr_trig(int state);
+int scr_inhib(int state);
 
 #endif // ENABLECONTROL_H
