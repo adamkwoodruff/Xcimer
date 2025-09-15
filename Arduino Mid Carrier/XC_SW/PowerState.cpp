@@ -20,4 +20,17 @@ volatile bool PowerState::ChargerRelay  = false;
 
 volatile bool PowerState::ScrTrig   = false;
 volatile bool PowerState::ScrInhib  = false;
-volatile bool PowerState::IgbtFaultState = false; 
+volatile bool PowerState::IgbtFaultState = false;
+
+volatile bool  PowerState::runCurrentWave = false;
+volatile float PowerState::currT1    = 0.0f;
+volatile float PowerState::currT2    = 0.0f;
+volatile float PowerState::currTHold = 0.0f;
+volatile float PowerState::currA1    = 0.0f;
+volatile float PowerState::currB1    = 0.0f;
+volatile float PowerState::currC1    = 0.0f;
+volatile float PowerState::currD1    = 0.0f;
+volatile float PowerState::currA2    = 0.0f;
+volatile float PowerState::currB2    = 0.0f;
+volatile float PowerState::currC2    = 0.0f;
+volatile float PowerState::currD2    = 0.0f;

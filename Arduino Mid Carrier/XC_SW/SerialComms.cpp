@@ -97,7 +97,21 @@ int process_event_in_uc(const std::string& json_event_std)
     else if (strcmp(name, "dump_relay") == 0) { PowerState::DumpRelay = (value != 0.0f); return 1; } 
     else if (strcmp(name, "charger_relay") == 0) { PowerState::ChargerRelay = (value != 0.0f); return 1; } 
     else if (strcmp(name, "scr_trig") == 0) { PowerState::ScrTrig = (value != 0.0f); return 1; } 
-    else if (strcmp(name, "scr_inhib") == 0) { PowerState::ScrInhib = (value != 0.0f); return 1; } 
+    else if (strcmp(name, "scr_inhib") == 0) { PowerState::ScrInhib = (value != 0.0f); return 1; }
+
+    // Current waveform controls
+    else if (strcmp(name, "run_current_wave") == 0) { PowerState::runCurrentWave = (value != 0.0f); return 1; }
+    else if (strcmp(name, "t1") == 0)  { PowerState::currT1    = value; return 1; }
+    else if (strcmp(name, "t2") == 0)  { PowerState::currT2    = value; return 1; }
+    else if (strcmp(name, "th") == 0)  { PowerState::currTHold = value; return 1; }
+    else if (strcmp(name, "a1") == 0)  { PowerState::currA1    = value; return 1; }
+    else if (strcmp(name, "b1") == 0)  { PowerState::currB1    = value; return 1; }
+    else if (strcmp(name, "c1") == 0)  { PowerState::currC1    = value; return 1; }
+    else if (strcmp(name, "d1") == 0)  { PowerState::currD1    = value; return 1; }
+    else if (strcmp(name, "a2") == 0)  { PowerState::currA2    = value; return 1; }
+    else if (strcmp(name, "b2") == 0)  { PowerState::currB2    = value; return 1; }
+    else if (strcmp(name, "c2") == 0)  { PowerState::currC2    = value; return 1; }
+    else if (strcmp(name, "d2") == 0)  { PowerState::currD2    = value; return 1; }
 
 
 

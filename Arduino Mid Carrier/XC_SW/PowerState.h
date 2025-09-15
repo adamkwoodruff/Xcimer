@@ -24,8 +24,22 @@ struct PowerState {
     static volatile bool ChargerRelay; 
 
     static volatile bool ScrTrig;
-    static volatile bool ScrInhib; 
+    static volatile bool ScrInhib;
     static volatile bool IgbtFaultState;
+
+    // Current waveform parameters
+    static volatile bool  runCurrentWave;
+    static volatile float currT1;
+    static volatile float currT2;
+    static volatile float currTHold;
+    static volatile float currA1;
+    static volatile float currB1;
+    static volatile float currC1;
+    static volatile float currD1;
+    static volatile float currA2;
+    static volatile float currB2;
+    static volatile float currC2;
+    static volatile float currD2;
 
 };
 
