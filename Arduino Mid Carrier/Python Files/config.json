@@ -1055,18 +1055,6 @@
           "src": "uc"
         }
       }
-    }, 
-     {
-      "poll_rpc_func": "run_current_wave",
-      "poll_interval_s": 0.5,
-      "giga_json_template": {
-        "display_event": {
-          "type": "set_value",
-          "name": "run_current_wave",
-          "value": "{rpc_result}",
-          "src": "uc"
-        }
-      }
     }
   ],
   "signals": {
@@ -1113,11 +1101,15 @@
       "dump_relay", "dump_fan", "charger_relay",
       "scr_trig", "scr_inhib", "igbt_fault", "run_current_wave"
     ],
-    "truth_push_keys": [
-      "volt_set", "curr_set",
-      "inter_enable", "extern_enable", "warn_lamp",
-      "dump_relay", "dump_fan", "charger_relay", "mode_set",
-      "scr_trig", "scr_inhib", "igbt_fault", "run_current_wave"
-    ]
+		"truth_push_keys": [
+		  "volt_set", "curr_set",
+		  "inter_enable", "extern_enable", "warn_lamp",
+		  "dump_relay", "dump_fan", "charger_relay", "mode_set",
+		  "scr_trig", "scr_inhib", "igbt_fault", "run_current_wave",
+		  "t1", "th", "t2",
+		  "a1", "b1", "c1", "d1",
+		  "a2", "b2", "c2", "d2"
+		]
+
   }
 }

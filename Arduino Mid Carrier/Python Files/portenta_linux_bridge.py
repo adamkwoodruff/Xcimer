@@ -193,7 +193,9 @@ def send_log_message(message: str) -> None:
             
 def update_and_broadcast(name, value, src="linux"):
     with DATA_LOCK:
-        if name in ("volt_set", "curr_set", "inter_enable",  "warn_lamp", "dump_fan","dump_relay", "charger_relay", "mode_set", "igbt_fault", "scr_trig", "scr_inhib") and value < 0:
+        if name in ("volt_set", "curr_set", "inter_enable",  "warn_lamp", "dump_fan","dump_relay", "charger_relay", "mode_set", "igbt_fault", "scr_trig", "scr_inhib", "t1", "th", "t2",
+		  "a1", "b1", "c1", "d1",
+		  "a2", "b2", "c2", "d2") and value < 0:
             value = 0
         if name in (
             "volt_act",
@@ -236,7 +238,6 @@ def poll_m4_signals():
         update_and_broadcast("igbt_fault", int(igbt_flt), src="rpc")
         update_and_broadcast("scr_trig", int(scr_trg), src="rpc")
         update_and_broadcast("scr_inhib", int(scr_in), src="rpc") 
-        update_and_broadcast("run_current_wave", int(RCuWa), src="rpc")
 
         inter_val = get_signal_value("inter_enable")
         out = 1 if inter_val and ext_en else 0
@@ -337,27 +338,45 @@ class SignalEntry:
 
 # Dedicated database of known signals and their latest values
 SIGNAL_DB = {name: SignalEntry(name, sid, 0) for name, sid in SIGNAL_IDS.items()}
-SIGNAL_DB_BY_ID = {entry.id: entry for entry in SIGNAL_DB.values()}
+SIGNAL_DB_BY_ID = {entry.id: entry for entry in SIGNAL_DB.values()} 
+
+# Forward these numeric signals to the microcontroller too
+POLY_KEYS = {
+    "t1", "th", "t2",
+    "a1", "b1", "c1", "d1",
+    "a2", "b2", "c2", "d2",
+}
 
 
 def set_signal_value(name: str, value: float, src: str = "unknown") -> None:
-    """Safely update both the signal database and generic value store with debug."""
+    """Safely update both the signal database and generic value store with debug,
+    and forward changes for bools + waveform params to the M4."""
     with DATA_LOCK:
         prev = SIGNAL_DB[name].value if name in SIGNAL_DB else TRUE_VALUES.get(name, 0.0)
-        if name in SIGNAL_DB:
-            SIGNAL_DB[name].value = float(value)
-        TRUE_VALUES[name] = float(value)
-        delta = value - prev
-        print(f"[Store] {src} updated '{name}': prev={prev} delta={delta} new={value}")
+        valf = float(value)
 
-        # Propagate updates originating on the Linux/UDP side down to the M4 so
-        # that firmware running on the microcontroller receives the latest
-        # values.  Values coming from the M4 itself (src="rpc" or src="uc")
-        # must not be echoed back to avoid feedback loops.
-        if src not in ("rpc", "uc"):
-            payload_value = int(value) if name in BOOL_NAMES else value
+        if name in SIGNAL_DB:
+            SIGNAL_DB[name].value = valf
+        TRUE_VALUES[name] = valf
+
+        delta = valf - float(prev)
+        print(f"[Store] {src} updated '{name}': prev={prev} delta={delta} new={valf}")
+
+        # Only forward changes that originate on the Linux side
+        # (avoid echoing values we *just* read back from the uC/RPC).
+        if src in ("rpc", "uc"):
+            return
+
+        # Forward booleans *and* polynomial/timing keys
+        if (name in BOOL_NAMES) or (name in POLY_KEYS):
+            # (Optional) avoid spamming identical values
+            if abs(delta) < 1e-12:
+                return
+
+            payload_value = int(valf) if name in BOOL_NAMES else valf
             payload = json.dumps({"display_event": {"name": name, "value": payload_value}})
             call_m4_rpc("process_event_in_uc", payload)
+
 
 
 def get_signal_value(name: str):
