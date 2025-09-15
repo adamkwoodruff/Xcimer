@@ -350,11 +350,13 @@ def set_signal_value(name: str, value: float, src: str = "unknown") -> None:
         delta = value - prev
         print(f"[Store] {src} updated '{name}': prev={prev} delta={delta} new={value}")
 
-        # Automatically propagate boolean value changes to the M4 when they
-        # originate from the Linux side.  Updates coming from the M4 itself are
-        # marked with src="rpc" or src="uc" and must not be echoed back.
-        if name in BOOL_NAMES and src not in ("rpc", "uc"):
-            payload = json.dumps({"display_event": {"name": name, "value": int(value)}})
+        # Propagate updates originating on the Linux/UDP side down to the M4 so
+        # that firmware running on the microcontroller receives the latest
+        # values.  Values coming from the M4 itself (src="rpc" or src="uc")
+        # must not be echoed back to avoid feedback loops.
+        if src not in ("rpc", "uc"):
+            payload_value = int(value) if name in BOOL_NAMES else value
+            payload = json.dumps({"display_event": {"name": name, "value": payload_value}})
             call_m4_rpc("process_event_in_uc", payload)
 
 
