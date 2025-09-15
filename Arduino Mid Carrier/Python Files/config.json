@@ -17,7 +17,7 @@
               "do": "set",
               "amount": 1
             },
-            "text": "Voltage and Current Control",
+            "text": "Current Control",
             "event_dest": "uc"
           },
           {
@@ -65,7 +65,7 @@
               "do": "set",
               "amount": 5
             },
-            "text": "Test",
+            "text": "Waveform Control",
             "event_dest": "uc"
           }
         ],
@@ -84,102 +84,17 @@
       {
         "id": 1,
         "type": "control",
-        "title": "Voltage and Current Control",
+        "title": "Current Control",
         "buttons": [
           {
             "id": 1,
             "visible": true,
             "disable": false,
             "action": {
-              "name": "volt_set",
-              "do": "add",
-              "amount": 1
+              "name": "run_current_wave",
+              "do": "toggle"
             },
-            "text": "Voltage +1 kV",
-            "event_dest": "uc"
-          },
-          {
-            "id": 2,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "volt_set",
-              "do": "add",
-              "amount": -1
-            },
-            "text": "Voltage -1 kV",
-            "event_dest": "uc"
-          },
-          {
-            "id": 3,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "volt_set",
-              "do": "add",
-              "amount": 10
-            },
-            "text": "Voltage +10 kV",
-            "event_dest": "uc"
-          },
-          {
-            "id": 4,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "volt_set",
-              "do": "add",
-              "amount": -10
-            },
-            "text": "Voltage -10 kV",
-            "event_dest": "uc"
-          },
-          {
-            "id": 5,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "curr_set",
-              "do": "add",
-              "amount": 1
-            },
-            "text": "Current +1 mA",
-            "event_dest": "uc"
-          },
-          {
-            "id": 6,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "curr_set",
-              "do": "add",
-              "amount": -1
-            },
-            "text": "Current -1 mA",
-            "event_dest": "uc"
-          },
-          {
-            "id": 7,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "curr_set",
-              "do": "add",
-              "amount": 10
-            },
-            "text": "Current +10 mA",
-            "event_dest": "uc"
-          },
-          {
-            "id": 8,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "curr_set",
-              "do": "add",
-              "amount": -10
-            },
-            "text": "Current -10 mA",
+            "text": "Run Current Waveform",
             "event_dest": "uc"
           }
         ],
@@ -198,37 +113,25 @@
           },
           {
             "id": 2,
-            "text": "Set Voltage:",
-            "visible": true,
-            "color": "white"
-          },
-          {
-            "id": 10,
-            "text": " kV",
-            "visible": true,
-            "color": "white"
-          },
-          {
-            "id": 5,
             "text": "Current:",
             "visible": true,
             "color": "white"
           },
           {
-            "id": 13,
-            "text": " mA",
+            "id":103,
+            "text": " A",
             "visible": true,
             "color": "white"
           },
           {
-            "id": 6,
+            "id": 3,
             "text": "Set Current:",
             "visible": true,
             "color": "white"
           },
           {
-            "id": 14,
-            "text": " mA",
+            "id": 11,
+            "text": " A",
             "visible": true,
             "color": "white"
           }
@@ -373,7 +276,7 @@
           },
           {
             "id": 2,
-            "name": "external_enable",
+            "name": "extern_enable",
             "type": "float",
             "display_format": "%.2f",
             "max_val": 1,
@@ -418,28 +321,6 @@
         "type": "control",
         "title": "SCR Control",
         "buttons": [
-          {
-            "id": 1,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "scr_inhib",
-              "do": "toggle"
-            },
-            "text": "SCR Inhibit",
-            "event_dest": "uc"
-          },
-          {
-            "id": 2,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "scr_trig",
-              "do": "toggle"
-            },
-            "text": "SCR Trigger",
-            "event_dest": "uc"
-          } 
         ],
         "labels": [
           {
@@ -451,6 +332,12 @@
           {
             "id": 3,
             "text": "SCR Trigger:",
+            "visible": true,
+            "color": "white"
+          }, 
+          {
+            "id": 5,
+            "text": "IGBT Fault:",
             "visible": true,
             "color": "white"
           }
@@ -471,6 +358,18 @@
           {
             "id": 3,
             "name": "scr_trig",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 0
+          }, 
+           {
+            "id": 5,
+            "name": "igbt_fault",
             "type": "float",
             "display_format": "%.0f",
             "min_val": 0,
@@ -583,7 +482,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 0
+            "default_value": 1
           },
           {
             "id": 3,
@@ -626,69 +525,209 @@
       {
         "id": 5,
         "type": "control",
-        "title": "Test",
+        "title": "Waveform Control",
         "buttons": [
-          {
-            "id": 1,
-            "visible": true,
-            "disable": false,
-            "action": { "name": "volt_set", "do": "set", "amount": 13000 },
-            "text": "Set Voltage 13kV",
-            "event_dest": "uc"
-          },
-          {
-            "id": 2,
-            "visible": true,
-            "disable": false,
-            "action": { "name": "volt_set", "do": "set", "amount": 0 },
-            "text": "Set Voltage 0kV",
-            "event_dest": "uc"
-          },
-          {
-            "id": 3,
-            "visible": true,
-            "disable": false,
-            "action": { "name": "curr_set", "do": "set", "amount": 50 },
-            "text": "Set Current 50mA",
-            "event_dest": "uc"
-          },
-          {
-            "id": 4,
-            "visible": true,
-            "disable": false,
-            "action": { "name": "curr_set", "do": "set", "amount": 0 },
-            "text": "Set Current 0mA",
-            "event_dest": "uc"
-          },
-          {
-            "id": 5,
-            "visible": true,
-            "disable": false,
-            "action": { "name": "SW_GET_VERSION", "do": "get", "amount": 0 },
-            "text": "SW_GET_VERSION",
-            "event_dest": "linux"
-          }
         ],
         "labels": [
           {
             "id": 1,
-            "text": "Software Version:",
+            "text": "T1: ",
             "visible": true,
             "color": "white"
-          }
+          }, 
+          {
+            "id": 2,
+            "text": "A1: ",
+            "visible": true,
+            "color": "white"
+          },  
+          {
+            "id": 3,
+            "text": "B1: ",
+            "visible": true,
+            "color": "white"
+          }, 
+           {
+            "id": 4,
+            "text": "C1: ",
+            "visible": true,
+            "color": "white"
+          }, 
+            {
+            "id": 5,
+            "text": "D1: ",
+            "visible": true,
+            "color": "white"
+          }, 
+          {
+            "id": 6,
+            "text": "T2: ",
+            "visible": true,
+            "color": "white"
+          }, 
+          {
+            "id": 7,
+            "text": "A2: ",
+            "visible": true,
+            "color": "white"
+          },  
+          {
+            "id": 8,
+            "text": "B2: ",
+            "visible": true,
+            "color": "white"
+          }, 
+           {
+            "id": 9,
+            "text": "C2: ",
+            "visible": true,
+            "color": "white"
+          }, 
+            {
+            "id": 10,
+            "text": "D2: ",
+            "visible": true,
+            "color": "white"
+          }, 
+           {
+            "id": 11,
+            "text": "TH: ",
+            "visible": true,
+            "color": "white"
+          }, 
         ],
         "values": [
           {
             "id": 1,
-            "name": "SW_GET_VERSION",
+            "name": "t1",
             "type": "float",
-            "display_format": "0x%08X",
+            "display_format": "%.0f",
             "min_val": 0,
-            "max_val": 4294967295,
-            "upper_green_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 0
+            "default_value": 1
+          }, 
+         {
+            "id": 3,
+            "name": "a1",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
+          },
+                    {
+            "id": 5,
+            "name": "b1",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
+          }, 
+         {
+            "id": 7,
+            "name": "c1",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
+          },
+                   {
+            "id": 9,
+            "name": "d1",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
+          },
+           {
+             "id": 2,
+            "name": "t2",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
+          }, 
+                 {
+             "id": 4,
+            "name": "a2",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
+          }, 
+             {
+             "id": 6,
+            "name": "b2",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
+          }, 
+            {
+             "id": 8,
+            "name": "c2",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
+          }, 
+           {
+             "id": 10,
+            "name": "d2",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
+          }, 
+            {
+             "id": 11,
+            "name": "th",
+            "type": "float",
+            "display_format": "%.0f",
+            "min_val": 0,
+            "max_val": 1,
+            "upper_green_val": 1,
+            "lower_red_val": 0,
+            "default_color": "blue",
+            "default_value": 1
           }
         ]
 
@@ -765,7 +804,7 @@
       "giga_json_template": {
         "display_event": {
           "type": "set_value",
-          "name": "external_enable",
+          "name": "extern_enable",
           "value": "{rpc_result}",
           "src": "uc"
         }
@@ -830,6 +869,18 @@
           "src": "uc"
         }
       }
+    }, 
+    {
+      "poll_rpc_func": "igbt_fault",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "igbt_fault",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
     },
     {
       "poll_rpc_func": "charger_relay",
@@ -843,5 +894,41 @@
         }
       }
     }
-  ]
+  ],
+  "signals": {
+    "true_values": {
+      "SW_GET_VERSION": 0,
+      "volt_set": 0, "curr_set": 0, "volt_act": 0, "curr_act": 0,
+      "inter_enable": 0, "extern_enable": 1, "output_enable": 0,
+      "warn_lamp": 0, "dump_relay": 0, "dump_fan": 1, "charger_relay": 0,
+      "mode_set": 0, "scr_trig": 0, "scr_inhib": 0, "igbt_fault": 0
+    },
+    "signal_ids": {
+      "SW_GET_VERSION": "0x01",
+      "volt_set": "0x04", "curr_set": "0x05", "volt_act": "0x06", "curr_act": "0x07",
+      "mode_set": "0x08", "inter_enable": "0x09", "extern_enable": "0x0A",
+      "warn_lamp": "0x0B", "dump_relay": "0x0C", "dump_fan": "0x0D", "charger_relay": "0x0E",
+      "output_enable": "0x0F",
+      "scr_trig": "0x10", "scr_inhib": "0x11", "igbt_fault": "0x12"
+    },
+    "expected_types": {
+      "volt_act": ["float", "int"],
+      "curr_act": ["float", "int"],
+      "extern_enable": ["int", "bool"],
+      "inter_enable": ["int", "bool"],
+      "has_sync_completed": ["int", "bool"],
+      "process_event_in_uc": ["int", "none"]
+    },
+    "bool_names": [
+      "extern_enable", "inter_enable", "warn_lamp",
+      "dump_relay", "dump_fan", "charger_relay",
+      "scr_trig", "scr_inhib", "igbt_fault"
+    ],
+    "truth_push_keys": [
+      "volt_set", "curr_set",
+      "inter_enable", "extern_enable", "warn_lamp",
+      "dump_relay", "dump_fan", "charger_relay", "mode_set",
+      "scr_trig", "scr_inhib", "igbt_fault"
+    ]
+  }
 }

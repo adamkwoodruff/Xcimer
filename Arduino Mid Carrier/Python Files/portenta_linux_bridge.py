@@ -38,58 +38,127 @@ if log_file.tell() == 0:
     csv_writer.writerow(["time_ms", "set_current", "duty"])
 print(f"[LOG] Writing CSV to: {LOG_FILE_PATH}")
 
-
-# Central store for latest values
-TRUE_VALUES = {
-    "SW_GET_VERSION": 0.0,
-    "volt_set": 0.0,
-    "curr_set": 0.0,
-    "volt_act": 0.0,
-    "curr_act": 0.0,
-    "igbt_fault": 0.0,
-    "ext_enable": 0.0,
-    "charger_relay": 0.0,
-    "dump_relay": 0.0,
-    "dump_fan": 0.0,
-    "warn_lamp": 0.0,
-    "scr_trig": 0.0,
-    "meas_voltage_pwm": 0.0,
-    "meas_current_pwm": 0.0,
-}
 # Store latest RPC results by name (e.g. "rpc_result_volt_set" -> value)
-RPC_RESULTS = {}
-
-# Track whether the system is in local or remote control mode.  A value of
-# ``None`` means no mode has been set yet (useful for unit tests that do not
-# load the full configuration).  The variable is updated whenever the
-# ``mode_set`` signal changes.
+RPC_RESULTS = {} 
 CURRENT_MODE = None
+# Central store for latest values
+# ---- Signal tables (start empty; filled from config.json) ----
+TRUE_VALUES: dict[str, float | int | bool] = {}
+SIGNAL_IDS: dict[str, int] = {}
+EXPECTED_TYPES: dict[str, tuple[type, ...]] = {}
+BOOL_NAMES: set[str] = set()
+TRUTH_PUSH_KEYS: list[str] = []  # what push_truth_table_to_m4() will send
 
-# Mapping of signal names to binary protocol IDs
-SIGNAL_IDS = {
-    "SW_GET_VERSION": 0x01,
-    "volt_set": 0x04,
-    "curr_set": 0x05,
-    "volt_act": 0x06,
-    "curr_act": 0x07,
-    "igbt_fault": 0x08,
-    "ext_enable": 0x09,
-    "charger_relay": 0x0A,
-    "dump_relay": 0x0B,
-    "dump_fan": 0x0C,
-    "warn_lamp": 0x0D,
-    "scr_trig": 0x0E,
-    "meas_voltage_pwm": 0x0F,
-    "meas_current_pwm": 0x10,
+# Derived map (rebuilt after load)
+SIGNAL_ID_TO_NAME: dict[int, str] = {}
+
+import json, os
+
+# String -> Python type mapping for EXPECTED_TYPES
+_NAME_TO_TYPE = {
+    "int": int, "float": float, "bool": bool, "none": type(None),
+    "None": type(None), "NULL": type(None), "Null": type(None),
 }
 
-EXPECTED_TYPES = {
-    "volt_act": (float, int),
-    "curr_act": (float, int),
-    "ext_enable": (int, bool),
-    "has_sync_completed": (int, bool),
-    "process_event_in_uc": (int, type(None)),  # often returns ack int or None
-}
+def _coerce_type_list(lst) -> tuple[type, ...]:
+    """Map a list like ['float','int'] to (float,int)."""
+    out = []
+    for t in lst:
+        if isinstance(t, type):
+            out.append(t)
+        elif isinstance(t, str) and t in _NAME_TO_TYPE:
+            out.append(_NAME_TO_TYPE[t])
+        else:
+            raise ValueError(f"Unknown type in expected_types: {t!r}")
+    return tuple(out)
+
+def _int_or_hex(v: int | str) -> int:
+    """Accept 16 or '0x10' strings."""
+    if isinstance(v, int):
+        return v
+    if isinstance(v, str):
+        return int(v.strip(), 0)
+    raise ValueError(f"Unsupported ID value: {v!r}")
+
+def load_signal_tables_from_config(cfg_path: str = "config.json") -> None:
+    """Populate TRUE_VALUES, SIGNAL_IDS, EXPECTED_TYPES, BOOL_NAMES, TRUTH_PUSH_KEYS from config.json only."""
+    global TRUE_VALUES, SIGNAL_IDS, EXPECTED_TYPES, BOOL_NAMES, TRUTH_PUSH_KEYS, SIGNAL_ID_TO_NAME
+
+    # Start fresh every time
+    TRUE_VALUES.clear()
+    SIGNAL_IDS.clear()
+    EXPECTED_TYPES.clear()
+    BOOL_NAMES.clear()
+    TRUTH_PUSH_KEYS.clear()
+    SIGNAL_ID_TO_NAME.clear()
+
+    if not os.path.exists(cfg_path):
+        print(f"[Config] {cfg_path} not found. Tables remain empty.")
+        return
+
+    with open(cfg_path, "r") as f:
+        cfg = json.load(f)
+
+    sigs = cfg.get("signals", {})
+    if not sigs:
+        print("[Config] No 'signals' section in config.json. Tables remain empty.")
+        return
+
+    # Required/optional sections
+    tv = sigs.get("true_values", {})
+    sid = sigs.get("signal_ids", {})
+    et  = sigs.get("expected_types", {})
+    bn  = sigs.get("bool_names", [])
+    tpk = sigs.get("truth_push_keys", [])
+
+    # true_values
+    TRUE_VALUES.update(tv)
+
+    # signal_ids (accept '0x..' or ints)
+    SIGNAL_IDS.update({k: _int_or_hex(v) for k, v in sid.items()})
+
+    # expected_types
+    for k, v in et.items():
+        EXPECTED_TYPES[k] = _coerce_type_list(v)
+
+    # bool_names
+    BOOL_NAMES.update(bn)
+
+    # truth_push_keys
+    TRUTH_PUSH_KEYS.extend(tpk)
+
+    # derived: reverse map
+    SIGNAL_ID_TO_NAME.update({v: k for k, v in SIGNAL_IDS.items()})
+
+    print(f"[Config] Loaded signals: {len(SIGNAL_IDS)} ids, {len(TRUE_VALUES)} defaults, "
+          f"{len(EXPECTED_TYPES)} type rules, {len(BOOL_NAMES)} bool names, "
+          f"{len(TRUTH_PUSH_KEYS)} truth-push keys.")
+
+
+def push_truth_table_to_m4():
+    """Push only the keys specified by config['signals']['truth_push_keys']."""
+    if not TRUTH_PUSH_KEYS:
+        print("[SYNC] No TRUTH_PUSH_KEYS configured; skipping truth push.")
+        return
+
+    with DATA_LOCK:
+        truth_subset = {}
+        for k in TRUTH_PUSH_KEYS:
+            # Missing keys simply won’t be sent
+            if k not in TRUE_VALUES:
+                continue
+            val = get_signal_value(k)  # your existing accessor
+            if k in BOOL_NAMES:
+                val = bool(val)
+            truth_subset[k] = val
+
+    try:
+        truth_json = json.dumps(truth_subset)
+        print(f"[SYNC] Sending truth table to M4: {truth_json}")
+        call_m4_rpc("set_truth_table", truth_json)
+        print("[SYNC] Truth table successfully pushed to M4.")
+    except Exception as e:
+        print(f"[SYNC] Failed to push truth table to M4: {e}")
 
 SIGNAL_ID_TO_NAME = {v: k for k, v in SIGNAL_IDS.items()}
 
@@ -120,7 +189,98 @@ def send_log_message(message: str) -> None:
         try:
             udp_sock.sendto(log_packet, client)
         except Exception as e:
-            builtins.print(f"[LOG] Failed to send log to {client}: {e}")
+            builtins.print(f"[LOG] Failed to send log to {client}: {e}") 
+            
+def update_and_broadcast(name, value, src="linux"):
+    with DATA_LOCK:
+        if name in ("volt_set", "curr_set", "inter_enable",  "warn_lamp", "dump_fan","dump_relay", "charger_relay", "mode_set", "igbt_fault", "scr_trig", "scr_inhib") and value < 0:
+            value = 0
+        if name in (
+            "volt_act",
+            "curr_act",       
+            "extern_enable",   
+        ) and src == "udp":
+            print(f"[Store] Skipping update of {name} from UDP (M4-owned).")
+            return
+        set_signal_value(name, value, src=src)
+        if name == "mode_set":
+            global CURRENT_MODE
+            CURRENT_MODE = "remote" if float(value) >= 0.5 else "local"
+        broadcast_binary_value(name, value)
+        send_to_giga({"display_event": {"type": "set_value", "name": name, "value": value, "src": src}})
+        print(f"\u2192 set [{src}] {name} = {value}")
+
+def poll_m4_signals():
+    """Poll voltage (2dp), current (2dp), and enable using one 64-bit packed RPC."""
+    packed = call_m4_rpc("get_poll_data", retries=0, timeout=0.5)
+    if isinstance(packed, int):
+        mask19 = (1 << 19) - 1
+
+        volt_x100 =  packed        & mask19          # 19 bits
+        curr_x100 = (packed >> 19) & mask19          # 19 bits
+        ext_en    = (packed >> 38) & 0x1             # 1 bit 
+        igbt_flt = (packed >> 39) & 0x1 
+        scr_trg = (packed >> 40) & 0x1 
+        scr_in = (packed >> 41) & 0x1
+
+        volt = volt_x100 / 100.0
+        curr = curr_x100 / 100.0
+
+        update_and_broadcast("volt_act", round(volt, 2), src="rpc")
+        update_and_broadcast("curr_act", round(curr, 2), src="rpc")
+        update_and_broadcast("extern_enable", int(ext_en), src="rpc") 
+        update_and_broadcast("igbt_fault", int(igbt_flt), src="rpc") 
+        update_and_broadcast("scr_trig", int(scr_trg), src="rpc") 
+        update_and_broadcast("scr_inhib", int(scr_in), src="rpc")
+
+        inter_val = get_signal_value("inter_enable")
+        out = 1 if inter_val and ext_en else 0
+        update_and_broadcast("output_enable", out, src="logic")  
+        
+
+def verify_m4_rpc_bindings():
+    """Print a simple PASS/FAIL table for key M4 RPC bindings."""
+    # Build a truth-table payload that doesn't change state (uses current values)
+    with DATA_LOCK:
+        truth_subset = {
+            "volt_set": get_signal_value("volt_set"),
+            "curr_set": get_signal_value("curr_set"),
+            "inter_enable": bool(get_signal_value("inter_enable")),
+            "extern_enable": bool(get_signal_value("extern_enable")),
+            "warn_lamp": bool(get_signal_value("warn_lamp")),
+            "ps_disable": bool(get_signal_value("ps_disable")),
+            "pwm_enable": bool(get_signal_value("pwm_enable")),
+            "pwm_reset": bool(get_signal_value("pwm_reset")),
+        }
+    noop_evt = json.dumps({"display_event": {"name": "noop", "value": 0}})
+    truth_json = json.dumps(truth_subset)
+
+    checks = [
+        ("get_poll_data",      ()),
+        ("has_sync_completed", ()),
+        ("process_event_in_uc",(noop_evt,)),
+        ("set_truth_table",    (truth_json,)),
+        ("volt_act",           ()),
+        ("curr_act",           ()),
+        ("extern_enable",      ()),
+        ("inter_enable",       ()),
+        # add/remove bindings as needed
+    ]
+
+    name_w = max(len(n) for n, _ in checks)
+    print("[Init][RPC] Binding check:")
+    print(f"  {'Function':{name_w}}  Status")
+    print(f"  {'-'*name_w}  ------")
+
+    passed = 0
+    for name, args in checks:
+        res = call_m4_rpc(name, *args, retries=1, timeout=0.3)
+        ok = (res is not None)
+        print(f"  {name:{name_w}}  {'PASS' if ok else 'FAIL'}")
+        if ok:
+            passed += 1
+
+    print(f"[Init][RPC] Summary: {passed}/{len(checks)} passed.")
 
 
 def print_ts(*args, **kwargs):
@@ -146,14 +306,7 @@ def log_pid_sample(time_ms: int, set_current: float, duty: float) -> None:
 # Signals that represent boolean values. When a toggle operation is requested
 # their current state will be inverted regardless of any provided increment
 # value.
-BOOL_NAMES = {
-    "ext_enable",
-    "charger_relay",
-    "dump_relay",
-    "dump_fan",
-    "warn_lamp",
-    "scr_trig",
-}
+
 
 
 @dataclass(frozen=True)
@@ -250,28 +403,6 @@ CMD_MAP = {
 CMD_MAP_INV = {v: k for k, v in CMD_MAP.items()}
 
 CONFIG_CHUNK_SIZE = 800  # bytes of JSON data per CONFIG page
-
-def push_truth_table_to_m4():
-    """Push the current TRUE_VALUES to the M4 core via RPC."""
-    with DATA_LOCK:
-        truth_subset = {
-            "volt_set": get_signal_value("volt_set"),
-            "curr_set": get_signal_value("curr_set"),
-            "ext_enable": bool(get_signal_value("ext_enable")),
-            "warn_lamp": bool(get_signal_value("warn_lamp")),
-            "charger_relay": bool(get_signal_value("charger_relay")),
-            "dump_relay": bool(get_signal_value("dump_relay")),
-            "dump_fan": bool(get_signal_value("dump_fan")),
-        }
-
-    try:
-        truth_json = json.dumps(truth_subset)
-        print(f"[SYNC] Sending truth table to M4: {truth_json}")
-        call_m4_rpc("set_truth_table", truth_json)
-        print("[SYNC] Truth table successfully pushed to M4.")
-    except Exception as e:
-        print(f"[SYNC] Failed to push truth table to M4: {e}")
-
 
 
 def check_and_sync_m4():
@@ -371,7 +502,7 @@ def call_m4_rpc(function_name, *args, retries=1, timeout=0.05):
                     result = float(result)
                     print(f"[RPC~ ] {_tname} {function_name} COERCE int->float -> {result}")
 
-                if function_name in ("ext_enable", "has_sync_completed"):
+                if function_name in ("extern_enable", "inter_enable", "has_sync_completed"):
                     result = bool(result)
                     print(f"[RPC~ ] {_tname} {function_name} COERCE -> bool -> {result}")
 
@@ -578,25 +709,7 @@ def log_all_configurable_values():
             if name not in SIGNAL_DB:
                 print(f"\u2192 set [init] {name} = {value}")
 
-def update_and_broadcast(name, value, src="linux"):
-    with DATA_LOCK:
-        if name in ("volt_set", "curr_set", "warn_lamp") and value < 0:
-            value = 0
-        if name in (
-            "volt_act",
-            "curr_act",
-            "ext_enable",
-            "igbt_fault",
-        ) and src == "udp":
-            print(f"[Store] Skipping update of {name} from UDP (M4-owned).")
-            return
-        set_signal_value(name, value, src=src)
-        if name == "mode_set":
-            global CURRENT_MODE
-            CURRENT_MODE = "remote" if float(value) >= 0.5 else "local"
-        broadcast_binary_value(name, value)
-        send_to_giga({"display_event": {"type": "set_value", "name": name, "value": value, "src": src}})
-        print(f"\u2192 set [{src}] {name} = {value}")
+
 
 
 def apply_increment(name, delta, src="linux"):
@@ -1045,147 +1158,84 @@ def process_giga_event(event_data):
             print(f"[Logic] Unknown destination for button press: {event_dest}")
 
 
-def poll_m4_signals():
-    """Poll voltage (2dp), current (2dp), and enable using one 64-bit packed RPC."""
-    packed = call_m4_rpc("get_poll_data", retries=0, timeout=0.5)
-    if isinstance(packed, int):
-        mask19 = (1 << 19) - 1
-
-        volt_x100 =  packed        & mask19          # 19 bits
-        curr_x100 = (packed >> 19) & mask19          # 19 bits
-        ext_en    = (packed >> 38) & 0x1             # 1 bit
-
-        volt = volt_x100 / 100.0
-        curr = curr_x100 / 100.0
-
-        update_and_broadcast("volt_act", round(volt, 2), src="rpc")
-        update_and_broadcast("curr_act", round(curr, 2), src="rpc")
-        update_and_broadcast("ext_enable", int(ext_en), src="rpc")
-        
-
-def verify_m4_rpc_bindings():
-    """Print a simple PASS/FAIL table for key M4 RPC bindings."""
-    # Build a truth-table payload that doesn't change state (uses current values)
-    with DATA_LOCK:
-        truth_subset = {
-            "volt_set": get_signal_value("volt_set"),
-            "curr_set": get_signal_value("curr_set"),
-            "ext_enable": bool(get_signal_value("ext_enable")),
-            "warn_lamp": bool(get_signal_value("warn_lamp")),
-            "charger_relay": bool(get_signal_value("charger_relay")),
-            "dump_relay": bool(get_signal_value("dump_relay")),
-            "dump_fan": bool(get_signal_value("dump_fan")),
-        }
-    noop_evt = json.dumps({"display_event": {"name": "noop", "value": 0}})
-    truth_json = json.dumps(truth_subset)
-
-    checks = [
-        ("get_poll_data",      ()),
-        ("has_sync_completed", ()),
-        ("process_event_in_uc",(noop_evt,)),
-        ("set_truth_table",    (truth_json,)),
-        ("volt_act",           ()),
-        ("curr_act",           ()),
-        ("ext_enable",      ()),
-        ("igbt_fault",       ()),
-        # add/remove bindings as needed
-    ]
-
-    name_w = max(len(n) for n, _ in checks)
-    print("[Init][RPC] Binding check:")
-    print(f"  {'Function':{name_w}}  Status")
-    print(f"  {'-'*name_w}  ------")
-
-    passed = 0
-    for name, args in checks:
-        res = call_m4_rpc(name, *args, retries=1, timeout=0.3)
-        ok = (res is not None)
-        print(f"  {name:{name_w}}  {'PASS' if ok else 'FAIL'}")
-        if ok:
-            passed += 1
-
-    print(f"[Init][RPC] Summary: {passed}/{len(checks)} passed.")
-
-
-
 if __name__ == "__main__":
     print("\n============================================")
     print("== Portenta Linux Giga/M4 Comms Hub (Config-Driven Polling) ==")
     print("============================================\n")
 
-    config_data = load_config(CONFIG_FILE_PATH)
-    if config_data is None:
-        print("[Init] CRITICAL: Failed to load configuration. Exiting.")
+    # --- Step 1: Load signal definitions from config file FIRST ---
+    # This populates SIGNAL_IDS, TRUE_VALUES, etc.
+    try:
+        load_signal_tables_from_config(CONFIG_FILE_PATH)
+    except Exception as e:
+        print(f"[Config] CRITICAL: Failed to load signal tables: {e}")
         exit(1)
 
-    initialize_true_values(config_data)
-    log_all_configurable_values()
+    # ========================== INSERT CODE HERE ==========================
+    # This is the critical fix. These maps must be rebuilt AFTER SIGNAL_IDS is loaded from the config.
+    SIGNALS = {name: SignalInfo(name, sid) for name, sid in SIGNAL_IDS.items()}
+    SIGNALS_BY_ID = {info.id: info for info in SIGNALS.values()}
+    SIGNAL_DB = {name: SignalEntry(name, sid, 0) for name, sid in SIGNAL_IDS.items()}
+    SIGNAL_DB_BY_ID = {entry.id: entry for entry in SIGNAL_DB.values()}
+    print(f"[Init] Rebuilt derived signal maps. SIGNAL_DB now contains {len(SIGNAL_DB)} entries.")
+    # ======================================================================
 
-    # Load polling configuration from config before running validation
-    m4_polls_config = config_data.get("m4_data_polls", [])
-    build_poll_name_map(m4_polls_config)
-
-    print("[Init] Checking m4_data_polls name/func pairs...")
-    for poll in m4_polls_config:
-        func = poll.get("poll_rpc_func")
-        name = poll.get("giga_json_template", {}).get("display_event", {}).get("name")
-        print(f"  - func: {func:16s} → name: {name}")
-        if func != name:
-            print(" MISMATCH: Poll function name does not match UI target name!") 
-            
+    # --- Step 2: Load the full configuration for the UI and polls ---
+    config_data = load_config(CONFIG_FILE_PATH)
+    if config_data is None:
+        print("[Init] CRITICAL: Failed to load full configuration. Exiting.")
+        exit(1)
+    
+    # --- Step 3: Set initial default values for the UI ---
+    # This must run AFTER signal tables are loaded.
     initialize_true_values(config_data)
     log_all_configurable_values() 
-    
+
+    # --- Step 4: Prepare for M4 communication ---
+    m4_polls_config = config_data.get("m4_data_polls", [])
+    build_poll_name_map(m4_polls_config)
     verify_m4_rpc_bindings()
     
-
+    # --- Step 5: Start network listeners and serial port ---
     udp_thread = threading.Thread(target=udp_listener, daemon=True)
     udp_thread.start()
 
-    #sync_thread = threading.Thread(target=check_and_sync_m4, daemon=True)
-    #sync_thread.start()
-
     try:
-        ser = serial.Serial(GIGA_UART_PORT, GIGA_BAUD_RATE, timeout=0.05) # Reduced timeout
+        ser = serial.Serial(GIGA_UART_PORT, GIGA_BAUD_RATE, timeout=0.05)
         print(f"[Init] Serial port {GIGA_UART_PORT} opened successfully.")
-        send_to_giga({"display_status": {"stage": "Waiting for config", "detail": ""}})
         if config_data and "display_config" in config_data:
             print("[Init] Sending display_config to Giga...")
             send_to_giga({"display_config": config_data["display_config"]})
             giga_ui_ready_time = time.time() + 4.0
             giga_ui_ready = True
             print("[Init] Display_config sent. UI updates will begin in 4 seconds.")
-        send_to_giga({"display_status": {"stage": "Bridge running", "detail": ""}})
     except serial.SerialException as e:
         print(f"[Init] Error opening serial port {GIGA_UART_PORT}: {e}")
         exit(1)
 
+    # --- Step 6: Enter the main event loop ---
     print("[Init] Starting main loop...")
     last_broadcast_time = 0
     last_poll_time = 0
     BROADCAST_INTERVAL = 0.2  # 5 Hz
-    POLL_INTERVAL = 0.05 # 10 Hz
+    POLL_INTERVAL = 0.05      # 20 Hz
 
     try:
         while True:
             current_time = time.time()
 
-            # --- Read from Giga (as fast as possible) ---
             giga_event = read_from_giga()
             if giga_event:
                 process_giga_event(giga_event)
 
-            # --- Poll M4 at a fixed interval ---
             if current_time - last_poll_time > POLL_INTERVAL:
                 poll_m4_signals()
                 last_poll_time = current_time
 
-            # --- Broadcast to Giga at a fixed interval ---
             if current_time - last_broadcast_time > BROADCAST_INTERVAL:
                 broadcast_all_values()
                 last_broadcast_time = current_time
-
-            # A small sleep to prevent the loop from busy-waiting and consuming 100% CPU
+            
             nb_sleep(0.01)
 
     except KeyboardInterrupt:
