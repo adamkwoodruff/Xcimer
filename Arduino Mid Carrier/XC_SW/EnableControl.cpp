@@ -7,13 +7,13 @@ void init_enable_control() {
   pinMode(DPIN_WARN_LAMP_OUT, OUTPUT);           // Warning lamp output
   digitalWrite(DPIN_WARN_LAMP_OUT, HIGH); 
 
-  pinMode(DUMP_FAN, OUTPUT);
-  pinMode(DUMP_RELAY, OUTPUT);
-  pinMode(CHARGER_RELAY, OUTPUT);
+  pinMode(DPIN_DUMP_FAN, OUTPUT);
+  pinMode(DPIN_DUMP_RELAY, OUTPUT);
+  pinMode(DPIN_CHARGER_RELAY, OUTPUT);
 
-  digitalWrite(DUMP_FAN, LOW);
-  digitalWrite(DUMP_RELAY, HIGH);
-  digitalWrite(CHARGER_RELAY, HIGH); 
+  digitalWrite(DPIN_DUMP_FAN, LOW);
+  digitalWrite(DPIN_DUMP_RELAY, HIGH);
+  digitalWrite(DPIN_CHARGER_RELAY, HIGH); 
 
   pinMode(SCR_TRIG, OUTPUT);
   pinMode(SCR_INHIB, OUTPUT);

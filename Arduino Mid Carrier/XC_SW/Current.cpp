@@ -31,7 +31,7 @@ void update_current() {
   int raw_adc   = currentReader ? currentReader(APIN_CURRENT_PROBE)
                                 : analogRead(APIN_CURRENT_PROBE);
   float vin     = (raw_adc / 4095.0f) * 3.3f;
-  float calcCur = (vin - 1.65f) * (1.75f / 1.65f);
+  float calcCur = (vin - 1.65f);
   calcCur       = calcCur / (VScale_C);
   PowerState::probeCurrent = -(calcCur + VOffset_C);
 

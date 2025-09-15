@@ -13,9 +13,9 @@
 // Optional hardware enable input
 #define DPIN_ENABLE_IN       PF_4   // External enable input
 
-#define DUMP_FAN       PF_3 //GPIO 2 
-#define DUMP_RELAY     PE_11 //GPIO 6
-#define CHARGER_RELAY  PF_12 //GPIO 4 
+#define DPIN_DUMP_FAN       PF_3 //GPIO 2 
+#define DPIN_DUMP_RELAY     PE_11 //GPIO 6
+#define DPIN_CHARGER_RELAY  PF_12 //GPIO 4 
 
 #define SCR_TRIG  PF_6 //GPIO 1 
 #define SCR_INHIB  PB_10 //PWM 3 
