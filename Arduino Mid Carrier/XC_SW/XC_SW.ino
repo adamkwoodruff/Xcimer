@@ -95,18 +95,18 @@ void loop() {
   float dt = (now_us - last_us) * 1e-6f;
   last_us = now_us;
 
-  update_curr_waveform(dt);
+  update_curr_waveform(dt); 
   update_voltage();
   update_current();
   update_enable_inputs();
   update_enable_outputs();
   update_igbt();
-  delayMicroseconds(500);
+  delayMicroseconds(5);
 
   // Sync status output
   if (!m4_sync_done) {
     //Serial.println("0xA0B0 - Ready – NOT synchronized");
-    delay(1000);  // once per second
+    delay(100);  // once per second
   } else if (!m4_sync_status_logged) {
     //Serial.println("0xA0B2 - Ready – SYNCHRONIZED");
     m4_sync_status_logged = true;

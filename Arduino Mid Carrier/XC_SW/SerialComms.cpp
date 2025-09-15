@@ -123,20 +123,23 @@ int process_event_in_uc(const std::string& json_event_std)
 static inline uint32_t clamp19(uint32_t x) { return (x > 409599U) ? 409599U : x; }
 
 uint64_t get_poll_data() {
-  uint32_t v100 = clamp19((uint32_t)lroundf(PowerState::probeVoltageOutput * 100.0f));
-  uint32_t c100 = clamp19((uint32_t)lroundf(PowerState::probeCurrent       * 100.0f));
-  uint32_t e    = PowerState::externalEnable ? 1U : 0U; 
-  uint32_t igbt_f    = PowerState::IgbtFaultState ? 1U : 0U; 
-  uint32_t ScrT    = PowerState::ScrTrig ? 1U : 0U; 
-  uint32_t ScrIn    = PowerState::ScrInhib ? 1U : 0U;
+  uint32_t v100   = clamp19((uint32_t)lroundf(PowerState::probeVoltageOutput * 100.0f));
+  uint32_t c100   = clamp19((uint32_t)lroundf(PowerState::probeCurrent       * 100.0f));
+  uint32_t e      = PowerState::externalEnable ? 1U : 0U;
+  uint32_t igbt_f = PowerState::IgbtFaultState ? 1U : 0U;
+  uint32_t ScrT   = PowerState::ScrTrig ? 1U : 0U;
+  uint32_t ScrIn  = PowerState::ScrInhib ? 1U : 0U;
+  uint32_t s100   = clamp19((uint32_t)lroundf(PowerState::setCurrent         * 100.0f)); 
+  uint32_t RCuWa  = PowerState::PowerState::runCurrentWave ? 1U : 0U;
 
   uint64_t word =  (uint64_t)v100
                  | ((uint64_t)c100 << 19)
                  | ((uint64_t)e    << 38)
                  | ((uint64_t)igbt_f << 39)
                  | ((uint64_t)ScrT << 40)
-                 | ((uint64_t)ScrIn << 41);
-
+                 | ((uint64_t)ScrIn << 41)
+                 | ((uint64_t)s100 << 42) 
+                 | ((uint64_t)RCuWa << 61);
 
   return word;
 }

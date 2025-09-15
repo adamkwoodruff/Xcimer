@@ -15,11 +15,11 @@ void init_enable_control() {
   digitalWrite(DPIN_DUMP_RELAY, HIGH);
   digitalWrite(DPIN_CHARGER_RELAY, HIGH); 
 
-  pinMode(SCR_TRIG, OUTPUT);
-  pinMode(SCR_INHIB, OUTPUT);
+  pinMode(DPIN_SCR_TRIG, OUTPUT);
+  pinMode(DPIN_SCR_INHIB, OUTPUT);
 
-  digitalWrite(SCR_TRIG, HIGH);
-  digitalWrite(SCR_INHIB, LOW);
+  digitalWrite(DPIN_SCR_TRIG, HIGH);
+  digitalWrite(DPIN_SCR_INHIB, LOW);
 
 }
 
@@ -53,11 +53,11 @@ void update_enable_outputs() {
     digitalWrite(DPIN_WARN_LAMP_OUT, HIGH);
   } 
 
-  digitalWrite(DUMP_FAN,      PowerState::DumpFan      ? LOW : HIGH);
-  digitalWrite(DUMP_RELAY,    PowerState::DumpRelay    ? LOW : HIGH);
-  digitalWrite(CHARGER_RELAY, PowerState::ChargerRelay ? LOW : HIGH); 
-  digitalWrite(SCR_TRIG,      PowerState::ScrTrig      ? LOW : HIGH);
-  digitalWrite(SCR_INHIB,     PowerState::ScrInhib     ? LOW : HIGH);
+  digitalWrite(DPIN_DUMP_FAN,      PowerState::DumpFan      ? LOW : HIGH);
+  digitalWrite(DPIN_DUMP_RELAY,    PowerState::DumpRelay    ? LOW : HIGH);
+  digitalWrite(DPIN_CHARGER_RELAY, PowerState::ChargerRelay ? LOW : HIGH); 
+  digitalWrite(DPIN_SCR_TRIG,      PowerState::ScrTrig      ? LOW : HIGH);
+  digitalWrite(DPIN_SCR_INHIB,     PowerState::ScrInhib     ? LOW : HIGH);
 
 }
 
@@ -66,17 +66,17 @@ int get_output_enable_state() {
 } 
 
 int dump_fan(int state) {
-  digitalWrite(DUMP_FAN, (state != 0) ? LOW : HIGH);
+  digitalWrite(DPIN_DUMP_FAN, (state != 0) ? LOW : HIGH);
   return 1;
 }
 
 int dump_relay(int state) {
-  digitalWrite(DUMP_RELAY, (state != 0) ? LOW : HIGH);
+  digitalWrite(DPIN_DUMP_RELAY, (state != 0) ? LOW : HIGH);
   return 1;
 }
 
 int charger_relay(int state) {
-  digitalWrite(CHARGER_RELAY, (state != 0) ? LOW : HIGH);
+  digitalWrite(DPIN_CHARGER_RELAY, (state != 0) ? LOW : HIGH);
   return 1;
 } 
 
@@ -86,4 +86,3 @@ int scr_trig(int state) {
 int scr_inhib(int state) {
     return PowerState::ScrInhib ? 1 : 0;
 }
-

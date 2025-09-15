@@ -17,8 +17,8 @@
 #define DPIN_DUMP_RELAY     PE_11 //GPIO 6
 #define DPIN_CHARGER_RELAY  PF_12 //GPIO 4 
 
-#define SCR_TRIG  PF_6 //GPIO 1 
-#define SCR_INHIB  PB_10 //PWM 3 
+#define DPIN_SCR_TRIG  PF_6 //GPIO 1 
+#define DPIN_SCR_INHIB  PB_10 //PWM 3 
 
 #define MEASURED_VOLT_OUT  PA_9 //PWM 1 
 #define MEASURED_CURR_OUT  PA_10 //PWM 2 
