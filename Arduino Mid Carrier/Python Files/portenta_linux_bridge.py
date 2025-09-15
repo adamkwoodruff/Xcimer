@@ -193,9 +193,22 @@ def send_log_message(message: str) -> None:
             
 def update_and_broadcast(name, value, src="linux"):
     with DATA_LOCK:
-        if name in ("volt_set", "curr_set", "inter_enable",  "warn_lamp", "dump_fan","dump_relay", "charger_relay", "mode_set", "igbt_fault", "scr_trig", "scr_inhib", "t1", "th", "t2",
-		  "a1", "b1", "c1", "d1",
-		  "a2", "b2", "c2", "d2") and value < 0:
+        if name in (
+            "volt_set",
+            "curr_set",
+            "inter_enable",
+            "warn_lamp",
+            "dump_fan",
+            "dump_relay",
+            "charger_relay",
+            "mode_set",
+            "igbt_fault",
+            "scr_trig",
+            "scr_inhib",
+            "t1",
+            "th",
+            "t2",
+        ) and value < 0:
             value = 0
         if name in (
             "volt_act",
