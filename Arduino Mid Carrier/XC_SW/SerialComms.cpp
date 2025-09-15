@@ -98,8 +98,6 @@ int process_event_in_uc(const std::string& json_event_std)
     else if (strcmp(name, "charger_relay") == 0) { PowerState::ChargerRelay = (value != 0.0f); return 1; } 
     else if (strcmp(name, "scr_trig") == 0) { PowerState::ScrTrig = (value != 0.0f); return 1; } 
     else if (strcmp(name, "scr_inhib") == 0) { PowerState::ScrInhib = (value != 0.0f); return 1; }
-
-    // Current waveform controls
     else if (strcmp(name, "run_current_wave") == 0) { PowerState::runCurrentWave = (value != 0.0f); return 1; }
     else if (strcmp(name, "t1") == 0)  { PowerState::currT1    = value; return 1; }
     else if (strcmp(name, "t2") == 0)  { PowerState::currT2    = value; return 1; }
@@ -130,7 +128,7 @@ uint64_t get_poll_data() {
   uint32_t ScrT   = PowerState::ScrTrig ? 1U : 0U;
   uint32_t ScrIn  = PowerState::ScrInhib ? 1U : 0U;
   uint32_t s100   = clamp19((uint32_t)lroundf(PowerState::setCurrent         * 100.0f)); 
-  uint32_t RCuWa  = PowerState::PowerState::runCurrentWave ? 1U : 0U;
+  uint32_t RCuWa  = PowerState::runCurrentWave ? 1U : 0U;
 
   uint64_t word =  (uint64_t)v100
                  | ((uint64_t)c100 << 19)
