@@ -400,6 +400,32 @@ def get_signal_value(name: str):
         return TRUE_VALUES.get(name)
 
 
+def send_polynomial_values_to_m4(repeat: int = 3, delay: float = 0.05) -> None:
+    """Send stored polynomial parameters to the M4 multiple times.
+
+    The current values for all keys in ``POLY_KEYS`` are retrieved from the
+    ``TRUE_VALUES`` store and sent to the microcontroller via
+    ``process_event_in_uc``.  Each coefficient is transmitted ``repeat`` times
+    with an optional ``delay`` in seconds between messages to improve
+    reliability.
+
+    Args:
+        repeat: Number of times each value should be transmitted.
+        delay:  Pause (in seconds) between transmissions.
+    """
+    coeffs = []
+    with DATA_LOCK:
+        for key in POLY_KEYS:
+            if key in TRUE_VALUES:
+                coeffs.append((key, TRUE_VALUES[key]))
+
+    for _ in range(max(1, repeat)):
+        for name, val in coeffs:
+            payload = json.dumps({"display_event": {"name": name, "value": val}})
+            call_m4_rpc("process_event_in_uc", payload)
+            time.sleep(delay)
+
+
 # Binary UDP protocol constants
 DEFAULT_SIGN_KEY = bytes.fromhex(('57 4F 4F 44 52 55 46 46 ' * 16).replace(' ', ''))
 CONFIG_KEY = bytes([0x3A, 0x7F, 0x0C, 0xD5])
