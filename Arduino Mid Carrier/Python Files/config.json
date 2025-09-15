@@ -594,8 +594,8 @@
             "text": "TH: ",
             "visible": true,
             "color": "white"
-          }, 
-        ],
+            }
+          ],
         "values": [
           {
             "id": 1,
@@ -893,6 +893,138 @@
           "src": "uc"
         }
       }
+    },
+    {
+      "poll_rpc_func": "t1",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "t1",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "a1",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "a1",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "b1",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "b1",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "c1",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "c1",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "d1",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "d1",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "t2",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "t2",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "a2",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "a2",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "b2",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "b2",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "c2",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "c2",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "d2",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "d2",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "th",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "th",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
     }
   ],
   "signals": {
@@ -901,7 +1033,9 @@
       "volt_set": 0, "curr_set": 0, "volt_act": 0, "curr_act": 0,
       "inter_enable": 0, "extern_enable": 1, "output_enable": 0,
       "warn_lamp": 0, "dump_relay": 0, "dump_fan": 1, "charger_relay": 0,
-      "mode_set": 0, "scr_trig": 0, "scr_inhib": 0, "igbt_fault": 0
+      "mode_set": 0, "scr_trig": 0, "scr_inhib": 0, "igbt_fault": 0,
+      "t1": 0, "a1": 0, "b1": 0, "c1": 0, "d1": 0,
+      "t2": 0, "a2": 0, "b2": 0, "c2": 0, "d2": 0, "th": 0
     },
     "signal_ids": {
       "SW_GET_VERSION": "0x01",
@@ -909,7 +1043,9 @@
       "mode_set": "0x08", "inter_enable": "0x09", "extern_enable": "0x0A",
       "warn_lamp": "0x0B", "dump_relay": "0x0C", "dump_fan": "0x0D", "charger_relay": "0x0E",
       "output_enable": "0x0F",
-      "scr_trig": "0x10", "scr_inhib": "0x11", "igbt_fault": "0x12"
+      "scr_trig": "0x10", "scr_inhib": "0x11", "igbt_fault": "0x12",
+      "t1": "0x13", "a1": "0x14", "b1": "0x15", "c1": "0x16", "d1": "0x17",
+      "t2": "0x18", "a2": "0x19", "b2": "0x1A", "c2": "0x1B", "d2": "0x1C", "th": "0x1D"
     },
     "expected_types": {
       "volt_act": ["float", "int"],
@@ -917,7 +1053,18 @@
       "extern_enable": ["int", "bool"],
       "inter_enable": ["int", "bool"],
       "has_sync_completed": ["int", "bool"],
-      "process_event_in_uc": ["int", "none"]
+      "process_event_in_uc": ["int", "none"],
+      "t1": ["float", "int"],
+      "a1": ["float", "int"],
+      "b1": ["float", "int"],
+      "c1": ["float", "int"],
+      "d1": ["float", "int"],
+      "t2": ["float", "int"],
+      "a2": ["float", "int"],
+      "b2": ["float", "int"],
+      "c2": ["float", "int"],
+      "d2": ["float", "int"],
+      "th": ["float", "int"]
     },
     "bool_names": [
       "extern_enable", "inter_enable", "warn_lamp",
