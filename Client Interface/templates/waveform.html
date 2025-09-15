@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waveform Control</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    label { display:block; margin-top:0.5rem; }
+    input { width: 6rem; }
+    button { margin-top:1rem; }
+  </style>
+</head>
+<body>
+  <h1>Waveform Parameters</h1>
+  <div id="controls">
+    <label>t1: <input id="t1" type="number" step="0.01"></label>
+    <label>th: <input id="th" type="number" step="0.01"></label>
+    <label>t2: <input id="t2" type="number" step="0.01"></label>
+    <label>a1: <input id="a1" type="number" step="0.01"></label>
+    <label>b1: <input id="b1" type="number" step="0.01"></label>
+    <label>c1: <input id="c1" type="number" step="0.01"></label>
+    <label>d1: <input id="d1" type="number" step="0.01"></label>
+    <label>a2: <input id="a2" type="number" step="0.01"></label>
+    <label>b2: <input id="b2" type="number" step="0.01"></label>
+    <label>c2: <input id="c2" type="number" step="0.01"></label>
+    <label>d2: <input id="d2" type="number" step="0.01"></label>
+  </div>
+  <button id="send">Send Values</button>
+  <button id="run">Run Current Wave</button>
+
+  <script>
+  const names = ["t1","th","t2","a1","b1","c1","d1","a2","b2","c2","d2"];
+
+  function sendCommand(name, value){
+    fetch('/api/command',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:name, value: value})
+    });
+  }
+
+  document.getElementById('send').addEventListener('click', () => {
+    names.forEach(n => {
+      const val = parseFloat(document.getElementById(n).value || '0');
+      sendCommand(n, val);
+    });
+  });
+
+  document.getElementById('run').addEventListener('click', () => {
+    sendCommand('run_current_wave', 1);
+  });
+  </script>
+</body>
+</html>

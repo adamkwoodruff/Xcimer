@@ -56,7 +56,11 @@ SIGNAL_MAP = {
     "mode_set": 0x08, "inter_enable": 0x09, "extern_enable": 0x0A,
     "warn_lamp": 0x0B, "ps_disable": 0x0C, "pwm_enable": 0x0D, "pwm_reset": 0x0E,
     "output_enable": 0x0F,
-    "SW_GET_VERSION": 0x01
+    "SW_GET_VERSION": 0x01,
+    "t1": 0x13, "th": 0x14, "t2": 0x15,
+    "a1": 0x16, "b1": 0x17, "c1": 0x18, "d1": 0x19,
+    "a2": 0x20, "b2": 0x21, "c2": 0x23, "d2": 0x24,
+    "run_current_wave": 0x25
 }
 SIGNAL_ID_TO_NAME = {v: k for k, v in SIGNAL_MAP.items()}
 LATEST_VALUES = {}
@@ -303,6 +307,13 @@ def api_upload_config():
         return jsonify({"status": "saved"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+@app.route("/waveform")
+def waveform_page():
+    """Simple page for editing waveform parameters."""
+    return render_template("waveform.html")
 
 
 
