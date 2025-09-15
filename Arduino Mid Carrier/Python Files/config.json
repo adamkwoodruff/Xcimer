@@ -107,31 +107,49 @@
           },
           {
             "id": 9,
-            "text": " kV",
+            "text": " V",
             "visible": true,
             "color": "white"
           },
           {
             "id": 2,
-            "text": "Current:",
+            "text": "Set Charge Voltage:",
             "visible": true,
             "color": "white"
           },
           {
-            "id":103,
-            "text": " A",
+            "id":10,
+            "text": " V",
             "visible": true,
             "color": "white"
           },
           {
             "id": 3,
-            "text": "Set Current:",
+            "text": "Current:",
             "visible": true,
             "color": "white"
           },
           {
             "id": 11,
             "text": " A",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 4,
+            "text": " Set Current:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 12,
+            "text": "A:",
+            "visible": true,
+            "color": "white"
+          },
+          {
+            "id": 5,
+            "text": "Runing Current Waveform:",
             "visible": true,
             "color": "white"
           }
@@ -155,7 +173,7 @@
           },
           {
             "id": 2,
-            "name": "volt_set",
+            "name": "volt_charge_set",
             "type": "float",
             "display_format": "%.2f",
             "min_val": 0,
@@ -170,7 +188,7 @@
             "default_value": 0
           },
           {
-            "id": 5,
+            "id": 3,
             "name": "curr_act",
             "type": "float",
             "display_format": "%.2f",
@@ -186,7 +204,7 @@
             "default_value": 0
           },
           {
-            "id": 6,
+            "id": 4,
             "name": "curr_set",
             "type": "float",
             "display_format": "%.2f",
@@ -198,6 +216,18 @@
             "upper_override_text": "OVER LIMIT",
             "lower_override_val": 40,
             "lower_override_text": "UNDER LIMIT",
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 5,
+            "name": "run_current_wave",
+            "type": "float",
+            "display_format": "%.2f",
+            "max_val": 1,
+            "min_val": 0,
+            "upper_green_val": 1,
+            "lower_red_val": -1,
             "default_color": "blue",
             "default_value": 0
           }
@@ -607,7 +637,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           }, 
          {
             "id": 3,
@@ -619,7 +649,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           },
                     {
             "id": 5,
@@ -631,7 +661,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           }, 
          {
             "id": 7,
@@ -643,7 +673,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           },
                    {
             "id": 9,
@@ -655,7 +685,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           },
            {
              "id": 2,
@@ -667,7 +697,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           }, 
                  {
              "id": 4,
@@ -679,7 +709,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           }, 
              {
              "id": 6,
@@ -691,7 +721,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           }, 
             {
              "id": 8,
@@ -703,7 +733,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           }, 
            {
              "id": 10,
@@ -715,7 +745,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           }, 
             {
              "id": 11,
@@ -727,7 +757,7 @@
             "upper_green_val": 1,
             "lower_red_val": 0,
             "default_color": "blue",
-            "default_value": 1
+            "default_value": 0
           }
         ]
 
@@ -1025,6 +1055,18 @@
           "src": "uc"
         }
       }
+    }, 
+     {
+      "poll_rpc_func": "run_current_wave",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "run_current_wave",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
     }
   ],
   "signals": {
@@ -1035,7 +1077,7 @@
       "warn_lamp": 0, "dump_relay": 0, "dump_fan": 1, "charger_relay": 0,
       "mode_set": 0, "scr_trig": 0, "scr_inhib": 0, "igbt_fault": 0,
       "t1": 0, "a1": 0, "b1": 0, "c1": 0, "d1": 0,
-      "t2": 0, "a2": 0, "b2": 0, "c2": 0, "d2": 0, "th": 0
+      "t2": 0, "a2": 0, "b2": 0, "c2": 0, "d2": 0, "th": 0, "run_current_wave": 0
     },
     "signal_ids": {
       "SW_GET_VERSION": "0x01",
@@ -1044,8 +1086,8 @@
       "warn_lamp": "0x0B", "dump_relay": "0x0C", "dump_fan": "0x0D", "charger_relay": "0x0E",
       "output_enable": "0x0F",
       "scr_trig": "0x10", "scr_inhib": "0x11", "igbt_fault": "0x12",
-      "t1": "0x13", "a1": "0x14", "b1": "0x15", "c1": "0x16", "d1": "0x17",
-      "t2": "0x18", "a2": "0x19", "b2": "0x1A", "c2": "0x1B", "d2": "0x1C", "th": "0x1D"
+      "t1": "0x13", "th": "0x14", "t2": "0x15", "a1": "0x16", "b1": "0x17",
+      "c1": "0x18", "d1": "0x19", "a2": "0x20", "b2": "0x21", "c2": "0x23", "d2": "0x24", "run_current_wave": "0x25"
     },
     "expected_types": {
       "volt_act": ["float", "int"],
@@ -1069,13 +1111,13 @@
     "bool_names": [
       "extern_enable", "inter_enable", "warn_lamp",
       "dump_relay", "dump_fan", "charger_relay",
-      "scr_trig", "scr_inhib", "igbt_fault"
+      "scr_trig", "scr_inhib", "igbt_fault", "run_current_wave"
     ],
     "truth_push_keys": [
       "volt_set", "curr_set",
       "inter_enable", "extern_enable", "warn_lamp",
       "dump_relay", "dump_fan", "charger_relay", "mode_set",
-      "scr_trig", "scr_inhib", "igbt_fault"
+      "scr_trig", "scr_inhib", "igbt_fault", "run_current_wave"
     ]
   }
 }

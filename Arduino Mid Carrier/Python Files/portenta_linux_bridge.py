@@ -211,31 +211,37 @@ def update_and_broadcast(name, value, src="linux"):
         print(f"\u2192 set [{src}] {name} = {value}")
 
 def poll_m4_signals():
-    """Poll voltage (2dp), current (2dp), and enable using one 64-bit packed RPC."""
+    """Poll voltage (2dp), current (2dp), enable, flags, and set-current using one 64-bit packed RPC."""
     packed = call_m4_rpc("get_poll_data", retries=0, timeout=0.5)
     if isinstance(packed, int):
         mask19 = (1 << 19) - 1
 
         volt_x100 =  packed        & mask19          # 19 bits
         curr_x100 = (packed >> 19) & mask19          # 19 bits
-        ext_en    = (packed >> 38) & 0x1             # 1 bit 
-        igbt_flt = (packed >> 39) & 0x1 
-        scr_trg = (packed >> 40) & 0x1 
-        scr_in = (packed >> 41) & 0x1
+        ext_en    = (packed >> 38) & 0x1             # 1 bit
+        igbt_flt  = (packed >> 39) & 0x1
+        scr_trg   = (packed >> 40) & 0x1
+        scr_in    = (packed >> 41) & 0x1
+        setc_x100 = (packed >> 42) & mask19 
+        RCuWa     = (packed >> 61) & 0x1   # 19 bits (new)
 
         volt = volt_x100 / 100.0
         curr = curr_x100 / 100.0
+        setc = setc_x100 / 100.0
 
         update_and_broadcast("volt_act", round(volt, 2), src="rpc")
         update_and_broadcast("curr_act", round(curr, 2), src="rpc")
-        update_and_broadcast("extern_enable", int(ext_en), src="rpc") 
-        update_and_broadcast("igbt_fault", int(igbt_flt), src="rpc") 
-        update_and_broadcast("scr_trig", int(scr_trg), src="rpc") 
-        update_and_broadcast("scr_inhib", int(scr_in), src="rpc")
+        update_and_broadcast("curr_set", round(setc, 2), src="rpc")  # new
+        update_and_broadcast("extern_enable", int(ext_en), src="rpc")
+        update_and_broadcast("igbt_fault", int(igbt_flt), src="rpc")
+        update_and_broadcast("scr_trig", int(scr_trg), src="rpc")
+        update_and_broadcast("scr_inhib", int(scr_in), src="rpc") 
+        update_and_broadcast("run_current_wave", int(RCuWa), src="rpc")
 
         inter_val = get_signal_value("inter_enable")
         out = 1 if inter_val and ext_en else 0
-        update_and_broadcast("output_enable", out, src="logic")  
+        update_and_broadcast("output_enable", out, src="logic")
+ 
         
 
 def verify_m4_rpc_bindings():
