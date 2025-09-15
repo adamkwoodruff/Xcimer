@@ -2,9 +2,10 @@
 #include "Config.h"
 #include "Voltage.h"
 #include "Current.h"
-#include "EnableControl.h"  
+#include "EnableControl.h"
 #include "SerialComms.h"
 #include "IGBT.h"
+#include "CurrWaveform.h"
 #include <ArduinoJson.h>
 #include <RPC.h>
 #include <string> 
@@ -89,10 +90,16 @@ void setup() {
 } 
 
 void loop() {
+  static uint32_t last_us = micros();
+  uint32_t now_us = micros();
+  float dt = (now_us - last_us) * 1e-6f;
+  last_us = now_us;
+
+  update_curr_waveform(dt);
   update_voltage();
   update_current();
-  update_enable_inputs();   
-  update_enable_outputs();  
+  update_enable_inputs();
+  update_enable_outputs();
   update_igbt();
   delayMicroseconds(500);
 
