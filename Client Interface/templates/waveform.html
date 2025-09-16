@@ -1,55 +1,450 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Waveform Control</title>
   <style>
-    body { font-family: sans-serif; margin: 2rem; }
-    label { display:block; margin-top:0.5rem; }
-    input { width: 6rem; }
-    button { margin-top:1rem; }
+    :root {
+      --bg: #0b0d10;
+      --panel: #141820;
+      --muted: #9aa4b2;
+      --text: #e7ecf3;
+      --accent: #6ea8fe;
+      --accent-2: #9ef0a5;
+      --warn: #ffb86b;
+      --danger: #ff6b6b;
+      --border: #222a36;
+      --radius: 14px;
+      --shadow: 0 8px 30px rgba(0,0,0,0.25);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f7fb;
+        --panel: #ffffff;
+        --muted: #6b7280;
+        --text: #0f172a;
+        --accent: #2563eb;
+        --accent-2: #16a34a;
+        --warn: #d97706;
+        --danger: #dc2626;
+        --border: #e5e7eb;
+        --shadow: 0 6px 20px rgba(0,0,0,0.08);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(110,168,254,.12), transparent 60%),
+                  radial-gradient(1000px 500px at 120% 10%, rgba(158,240,165,.10), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      padding: 24px;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 18px;
+      letter-spacing: .3px;
+    }
+    .container {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1.15fr 2fr;
+    }
+    @media (max-width: 980px) {
+      .container { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .card .head {
+      padding: 14px 16px 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card .body {
+      padding: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px 12px;
+    }
+    .grid .span-2 { grid-column: span 2; }
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+    .label {
+      font-size: 12px; color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .input {
+      display: flex; align-items: center; gap: 8px;
+      background: color-mix(in oklab, var(--panel) 92%, #000 8%);
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: 10px;
+    }
+    input[type="number"] {
+      appearance: textfield;
+      width: 100%;
+      border: none; outline: none; background: transparent;
+      color: var(--text); font-weight: 600;
+    }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      border: 1px solid var(--border);
+      background: linear-gradient(0deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform .04s ease, background .2s ease, border-color .2s ease;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: color-mix(in oklab, var(--accent) 50%, var(--border)); }
+    .btn.primary { background: linear-gradient(140deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 30%, transparent) 60%); color: #fff; border-color: transparent; }
+    .btn.run { background: linear-gradient(140deg, var(--accent-2) 0%, color-mix(in oklab, var(--accent-2) 30%, transparent) 60%); color: #0b110a; border-color: transparent; }
+    .btn.ghost { background: transparent; }
+    .muted { color: var(--muted); }
+    .stat {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end;
+      font-size: 13px; margin-top: 8px;
+    }
+    canvas {
+      width: 100%; height: 340px; display: block;
+      background:
+        repeating-linear-gradient(to right, transparent 0 59px, color-mix(in oklab, var(--panel) 85%, var(--border)) 60px 61px),
+        repeating-linear-gradient(to bottom, transparent 0 59px, color-mix(in oklab, var(--panel) 85%, var(--border)) 60px 61px);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .badgelike {
+      padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+      border: 1px solid var(--border); color: var(--muted);
+    }
+    .alert { color: var(--warn); font-weight: 600; }
+    .ok { color: var(--accent-2); font-weight: 600; }
+    .divider { height: 1px; background: var(--border); margin: 10px 0; }
   </style>
 </head>
 <body>
-  <h1>Waveform Parameters</h1>
-  <div id="controls">
-    <label>t1: <input id="t1" type="number" step="0.01"></label>
-    <label>th: <input id="th" type="number" step="0.01"></label>
-    <label>t2: <input id="t2" type="number" step="0.01"></label>
-    <label>a1: <input id="a1" type="number" step="0.01"></label>
-    <label>b1: <input id="b1" type="number" step="0.01"></label>
-    <label>c1: <input id="c1" type="number" step="0.01"></label>
-    <label>d1: <input id="d1" type="number" step="0.01"></label>
-    <label>a2: <input id="a2" type="number" step="0.01"></label>
-    <label>b2: <input id="b2" type="number" step="0.01"></label>
-    <label>c2: <input id="c2" type="number" step="0.01"></label>
-    <label>d2: <input id="d2" type="number" step="0.01"></label>
+  <h1>Waveform Designer</h1>
+
+  <div class="container">
+    <!-- Controls -->
+    <div class="card">
+      <div class="head">
+        <div class="row">
+          <span class="badgelike">Cubic → Hold → Cubic</span>
+          <span class="muted">Design &amp; preview your current waveform</span>
+        </div>
+        <div class="row">
+          <label class="label">
+            Units:
+            <select id="units" class="input" style="padding:6px 10px;border-radius:8px;">
+              <option value="ms">milliseconds</option>
+              <option value="s">seconds</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="body">
+        <div class="grid">
+          <div class="field">
+            <span class="label">t1 (ramp up)</span>
+            <div class="input"><input id="t1" type="number" step="0.01" min="0" value="500"></div>
+          </div>
+          <div class="field">
+            <span class="label">th (hold)</span>
+            <div class="input"><input id="th" type="number" step="0.01" min="0" value="100"></div>
+          </div>
+          <div class="field">
+            <span class="label">t2 (ramp down)</span>
+            <div class="input"><input id="t2" type="number" step="0.01" min="0" value="500"></div>
+          </div>
+          <div></div>
+
+          <div class="field">
+            <span class="label">a1</span>
+            <div class="input"><input id="a1" type="number" step="0.01" value="0"></div>
+          </div>
+          <div class="field">
+            <span class="label">b1</span>
+            <div class="input"><input id="b1" type="number" step="0.01" value="6"></div>
+          </div>
+          <div class="field">
+            <span class="label">c1</span>
+            <div class="input"><input id="c1" type="number" step="0.01" value="0"></div>
+          </div>
+          <div class="field">
+            <span class="label">d1</span>
+            <div class="input"><input id="d1" type="number" step="0.01" value="0"></div>
+          </div>
+
+          <div class="field">
+            <span class="label">a2</span>
+            <div class="input"><input id="a2" type="number" step="0.01" value="3000"></div>
+          </div>
+          <div class="field">
+            <span class="label">b2</span>
+            <div class="input"><input id="b2" type="number" step="0.01" value="-6"></div>
+          </div>
+          <div class="field">
+            <span class="label">c2</span>
+            <div class="input"><input id="c2" type="number" step="0.01" value="0"></div>
+          </div>
+          <div class="field">
+            <span class="label">d2</span>
+            <div class="input"><input id="d2" type="number" step="0.01" value="0"></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <button class="btn" id="make-continuous" title="Match a2 to end of first segment">Make Down-Ramp Continuous</button>
+          <button class="btn ghost" id="reset">Reset</button>
+          <div style="flex:1"></div>
+          <button class="btn" id="send">Send Values</button>
+          <button class="btn run" id="run">Run</button>
+          <button class="btn primary" id="sendrun">Send &amp; Run</button>
+        </div>
+
+        <div class="stat">
+          <div><span class="muted">Total duration</span></div>
+          <div><strong id="tTotal">—</strong></div>
+        </div>
+        <div class="stat">
+          <div><span class="muted">Min / Max (preview)</span></div>
+          <div><strong id="yMinMax">—</strong></div>
+        </div>
+        <div class="stat">
+          <div><span class="muted">Continuity @ join</span></div>
+          <div id="contStatus" class="alert">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="card">
+      <div class="head">
+        <div class="row">
+          <span class="badgelike">Preview</span>
+          <span class="muted">Piecewise current profile</span>
+        </div>
+        <div class="row">
+          <span class="muted">y = current (A), x = time</span>
+        </div>
+      </div>
+      <div class="body">
+        <canvas id="plot" width="1200" height="420"></canvas>
+      </div>
+    </div>
   </div>
-  <button id="send">Send Values</button>
-  <button id="run">Run Current Wave</button>
 
   <script>
-  const names = ["t1","th","t2","a1","b1","c1","d1","a2","b2","c2","d2"];
+    // ---------- utilities ----------
+    const $ = id => document.getElementById(id);
+    const names = ["t1","th","t2","a1","b1","c1","d1","a2","b2","c2","d2"];
+    const MAX_CURRENT = 3000; // clamp like firmware
 
-  function sendCommand(name, value){
-    fetch('/api/command',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name:name, value: value})
+    function readValues() {
+      const vals = {};
+      for (const n of names) vals[n] = parseFloat($(n).value || "0");
+      vals.units = $("units").value; // "ms" or "s"
+      return vals;
+    }
+    function poly3(A,B,C,D,s){ return ((D*s + C)*s + B)*s + A; }
+
+    // Convert UI units to SECONDS for preview + firmware logic
+    function toSeconds(v, units) { return units === "ms" ? v * 0.001 : v; }
+
+    // Sample the waveform for preview
+    function sampleWave() {
+      const v = readValues();
+      const t1 = toSeconds(v.t1, v.units);
+      const th = toSeconds(v.th, v.units);
+      const t2 = toSeconds(v.t2, v.units);
+      const t2Start = t1 + th;
+      const tEnd = t1 + th + t2;
+
+      // sample density ~ 600 pts total
+      const pts = [];
+      const N = 600;
+      if (tEnd <= 0) return {pts:[], tEnd:0, yMin:0, yMax:0, yJoin1:0, yJoin2:0};
+
+      let yMin = Infinity, yMax = -Infinity;
+      const yHold = poly3(v.a1, v.b1, v.c1, v.d1, 1);
+      const yJoin1 = yHold;
+      const yJoin2 = poly3(v.a2, v.b2, v.c2, v.d2, 0);
+
+      for (let i = 0; i <= N; i++) {
+        const t = tEnd * (i / N);
+        let y;
+        if (t1 > 0 && t < t1) {
+          const s = t / t1;
+          y = poly3(v.a1, v.b1, v.c1, v.d1, s);
+        } else if (t < t2Start) {
+          y = yHold;
+        } else if (t2 > 0 && t < tEnd) {
+          const s = (t - t2Start) / t2;
+          y = poly3(v.a2, v.b2, v.c2, v.d2, s);
+        } else {
+          y = poly3(v.a2, v.b2, v.c2, v.d2, 1);
+        }
+        if (y < 0) y = 0;                 // clamp like FW
+        if (y > MAX_CURRENT) y = MAX_CURRENT;
+        yMin = Math.min(yMin, y);
+        yMax = Math.max(yMax, y);
+        pts.push({t,y});
+      }
+      return {pts, tEnd, yMin, yMax, yJoin1, yJoin2};
+    }
+
+    // Draw axes + line on canvas
+    function drawPreview() {
+      const {pts, tEnd, yMin, yMax, yJoin1, yJoin2} = sampleWave();
+      const c = $("plot");
+      const ctx = c.getContext("2d");
+      ctx.clearRect(0,0,c.width,c.height);
+
+      // padding for axes
+      const padL = 55, padR = 16, padT = 12, padB = 36;
+      const W = c.width - padL - padR;
+      const H = c.height - padT - padB;
+
+      // nice ranges
+      const yPad = Math.max(2, (yMax - yMin) * 0.1);
+      const y0 = Math.max(0, Math.floor((yMin - yPad)));
+      const y1 = Math.min(MAX_CURRENT, Math.ceil((yMax + yPad)));
+      const x0 = 0, x1 = Math.max(1e-6, tEnd);
+
+      // helpers
+      const xpix = t => padL + (t - x0) / (x1 - x0) * W;
+      const ypix = y => padT + (1 - (y - y0) / (y1 - y0)) * H;
+
+      // grid
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border');
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      // vertical grid (5)
+      for (let i=0; i<=5; i++){
+        const x = padL + (W * i/5);
+        ctx.moveTo(x, padT); ctx.lineTo(x, padT+H);
+      }
+      // horizontal grid (5)
+      for (let i=0; i<=5; i++){
+        const y = padT + (H * i/5);
+        ctx.moveTo(padL, y); ctx.lineTo(padL+W, y);
+      }
+      ctx.stroke();
+
+      // axes labels
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+      ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Inter";
+      ctx.textAlign = "center";
+      for (let i=0; i<=5; i++){
+        const t = x0 + (x1 - x0) * i/5;
+        ctx.fillText(t.toFixed(2), padL + (W*i/5), padT+H+22);
+      }
+      ctx.textAlign = "right";
+      for (let i=0; i<=5; i++){
+        const y = y0 + (y1 - y0) * i/5;
+        ctx.fillText(y.toFixed(0), padL-8, padT + (H*(1-i/5)) + 4);
+      }
+
+      // piecewise shading (optional)
+      const v = readValues();
+      const t1s = toSeconds(v.t1, v.units);
+      const ths = toSeconds(v.th, v.units);
+      const t2s = toSeconds(v.t2, v.units);
+      ctx.fillStyle = "rgba(110,168,254,0.06)";
+      ctx.fillRect(xpix(0), padT, xpix(t1s)-xpix(0), H);
+      ctx.fillStyle = "rgba(158,240,165,0.06)";
+      ctx.fillRect(xpix(t1s), padT, xpix(t1s+ths)-xpix(t1s), H);
+      ctx.fillStyle = "rgba(255,184,107,0.06)";
+      ctx.fillRect(xpix(t1s+ths), padT, xpix(t1s+ths+t2s)-xpix(t1s+ths), H);
+
+      // waveform
+      if (pts.length > 0) {
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(xpix(pts[0].t), ypix(pts[0].y));
+        for (const p of pts) ctx.lineTo(xpix(p.t), ypix(p.y));
+        ctx.stroke();
+      }
+
+      // join discontinuity indicator
+      const cont = Math.abs(yJoin1 - yJoin2) < 1e-6;
+      $("contStatus").textContent = cont ? "Continuous ✓" : `Jump = ${(yJoin2 - yJoin1).toFixed(3)} A`;
+      $("contStatus").className = cont ? "ok" : "alert";
+
+      // stats
+      $("tTotal").textContent = x1.toFixed(3) + " s";
+      $("yMinMax").textContent = `${yMin.toFixed(3)} A … ${yMax.toFixed(3)} A`;
+    }
+
+    // Send helpers
+    function sendCommand(name, value){
+      return fetch('/api/command', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, value})
+      });
+    }
+    async function sendAllValues() {
+      const v = readValues();
+      for (const n of names) {
+        const val = parseFloat($(n).value || '0');
+        await sendCommand(n, val);
+      }
+    }
+
+    // Buttons
+    $("send").addEventListener("click", async () => {
+      await sendAllValues();
     });
-  }
-
-  document.getElementById('send').addEventListener('click', () => {
-    names.forEach(n => {
-      const val = parseFloat(document.getElementById(n).value || '0');
-      sendCommand(n, val);
+    $("run").addEventListener("click", async () => {
+      // trigger run (bool → 1)
+      await sendCommand('run_current_wave', 1);
     });
-  });
+    $("sendrun").addEventListener("click", async () => {
+      await sendAllValues();
+      await sendCommand('run_current_wave', 1);
+    });
+    $("reset").addEventListener("click", () => {
+      // simple defaults
+      $("t1").value = 500; $("th").value = 100; $("t2").value = 500; $("units").value = "ms";
+      $("a1").value = 0; $("b1").value = 6; $("c1").value = 0; $("d1").value = 0;
+      $("a2").value = 3000; $("b2").value = -6; $("c2").value = 0; $("d2").value = 0;
+      drawPreview();
+    });
+    $("make-continuous").addEventListener("click", () => {
+      // force continuity at the join: a2 := poly1(1)
+      const a1 = parseFloat($("a1").value||"0");
+      const b1 = parseFloat($("b1").value||"0");
+      const c1 = parseFloat($("c1").value||"0");
+      const d1 = parseFloat($("d1").value||"0");
+      const yJoin = a1 + b1 + c1 + d1;
+      $("a2").value = yJoin.toFixed(6);
+      drawPreview();
+    });
 
-  document.getElementById('run').addEventListener('click', () => {
-    sendCommand('run_current_wave', 1);
-  });
+    // Live update preview
+    for (const n of [...names, "units"]) {
+      $(n).addEventListener("input", drawPreview);
+      $(n).addEventListener("change", drawPreview);
+    }
+
+    // Kick things off
+    drawPreview();
   </script>
 </body>
 </html>
