@@ -16,73 +16,55 @@ void update_curr_waveform(float dt) {
     if (PowerState::runCurrentWave && !running) {
         t = 0.0f;
         running = true;
-        PowerState::runCurrentWave = false; // Latch the start signal
+        // FIX 1: Consume the trigger immediately so it can be re-triggered later.
+        
         Serial.println("[RPC DEBUG] Waveform triggered. Resetting time t=0.0");
     }
 
     if (!running) {
+        // If not running, ensure the set current is zero and do nothing else.
+        PowerState::setCurrent = 0.0f;
         return;
     }
 
-    // --- Prepare variables for the single print statement ---
-    const char* phase_str;
-    float s = -1.0f; // Use -1.0f to indicate 'not applicable' for the hold phase
-    float y_raw;     // The raw calculated current before clamping
-    float A, B, C, D; // Local variables to hold the active coefficients
+    float y_raw = 0.0f;
+    float A, B, C, D;
 
-    // Load time constants from PowerState
     const float t1 = PowerState::currT1;
     const float t_hold = PowerState::currTHold;
     const float t2 = PowerState::currT2;
     const float t2_start = t1 + t_hold;
     const float t_end = t2_start + t2;
 
-    if (t < t2_start) { // This block covers both "Ramp Up" and "Hold" phases
-        // Use the first set of polynomial coefficients
-        A = PowerState::currA1;
-        B = PowerState::currB1;
-        C = PowerState::currC1;
-        D = PowerState::currD1;
+    if (t < t2_start) { // Ramp Up and Hold phases
+        A = PowerState::currA1; B = PowerState::currB1; C = PowerState::currC1; D = PowerState::currD1;
         if (t < t1 && t1 > 0.0f) {
-            phase_str = "Ramp Up";
-            s = t / t1;
+            float s = t / t1;
             y_raw = poly3(A, B, C, D, s);
         } else {
-            phase_str = "Hold";
             y_raw = poly3(A, B, C, D, 1.0f);
         }
-    } else { // This block covers "Ramp Down" and "Finished" phases
-        // Use the second set of polynomial coefficients
-        A = PowerState::currA2;
-        B = PowerState::currB2;
-        C = PowerState::currC2;
-        D = PowerState::currD2;
-        if (t < t_end && t2 > 0.0f) {
-            phase_str = "Ramp Down";
-            s = (t - t2_start) / t2;
-            y_raw = poly3(A, B, C, D, s);
-        } else {
-            phase_str = "Finished";
-            y_raw = poly3(A, B, C, D, 1.0f);
-            running = false;
-        }
+    } else if (t < t_end && t2 > 0.0f) { // Ramp Down phase
+        A = PowerState::currA2; B = PowerState::currB2; C = PowerState::currC2; D = PowerState::currD2;
+        float s = (t - t2_start) / t2;
+        y_raw = poly3(A, B, C, D, s);
+    } else { // Finished
+        // The sequence is over, stop running. The current will be set to 0 below.
+        running = false; 
+        PowerState::runCurrentWave = false;
     }
 
-    float y_clamped = y_raw;
-    if (y_clamped < 0.0f) y_clamped = 0.0f;
-    if (y_clamped > CURRENT_LIMIT_MAX) y_clamped = CURRENT_LIMIT_MAX;
-
-    PowerState::setCurrent = y_clamped;
-
-    // --- UPDATED PRINT SECTION ---
-    char debug_buffer[200]; // Increased buffer size for the extra values
-
-    snprintf(debug_buffer, sizeof(debug_buffer),
-             "[RPC] t:%.3f|Phase:%-10s|s:%.3f|y:%.3f|I:%.3f | Coeffs[A:%.2f,B:%.2f,C:%.2f,D:%.2f]",
-             t, phase_str, s, y_raw, PowerState::setCurrent, A, B, C, D);
-
-    Serial.println(debug_buffer);
-    // --- END OF UPDATE ---
+    // FIX 2: If the waveform just finished, set current to 0. Otherwise, use the calculated value.
+    if (!running) { 
+        PowerState::setCurrent = 0.0f;
+        Serial.println("[RPC DEBUG] Waveform finished. Setting current to 0.");
+    } else {
+        // Clamp the calculated value while running
+        float y_clamped = y_raw;
+        if (y_clamped < 0.0f) y_clamped = 0.0f;
+        if (y_clamped > CURRENT_LIMIT_MAX) y_clamped = CURRENT_LIMIT_MAX;
+        PowerState::setCurrent = y_clamped;
+    }
 
     t += dt;
 }

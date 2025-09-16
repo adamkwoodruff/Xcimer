@@ -101,12 +101,15 @@ void loop() {
   update_enable_inputs();
   update_enable_outputs();
   update_igbt();
-  delayMicroseconds(5);
+  //delayMicroseconds(5);
 
   // Sync status output
+  static uint32_t last_log_ms = 0;
   if (!m4_sync_done) {
-    //Serial.println("0xA0B0 - Ready – NOT synchronized");
-    delay(100);  // once per second
+    if (millis() - last_log_ms > 1000) { // Log once per second
+      //Serial.println("0xA0B0 - Ready – NOT synchronized");
+      last_log_ms = millis();
+    }
   } else if (!m4_sync_status_logged) {
     //Serial.println("0xA0B2 - Ready – SYNCHRONIZED");
     m4_sync_status_logged = true;
