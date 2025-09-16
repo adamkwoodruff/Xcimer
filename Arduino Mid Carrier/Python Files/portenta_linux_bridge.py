@@ -250,7 +250,8 @@ def poll_m4_signals():
         update_and_broadcast("extern_enable", int(ext_en), src="rpc")
         update_and_broadcast("igbt_fault", int(igbt_flt), src="rpc")
         update_and_broadcast("scr_trig", int(scr_trg), src="rpc")
-        update_and_broadcast("scr_inhib", int(scr_in), src="rpc") 
+        update_and_broadcast("scr_inhib", int(scr_in), src="rpc")
+        update_and_broadcast("run_current_wave", int(RCuWa), src="rpc")
 
         inter_val = get_signal_value("inter_enable")
         out = 1 if inter_val and ext_en else 0
