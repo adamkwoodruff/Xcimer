@@ -23,7 +23,7 @@ void init_voltage() {
   pinMode(APIN_VOLTAGE_PROBE, INPUT);
   pinMode(MEASURED_VOLT_OUT, OUTPUT);
 
-#if defined(ARDUINO_ARCH_STM32)
+#if defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_MBED)
   measured_pwm_init();
 #elif defined(TEENSYDUINO) || defined(ARDUINO_ARCH_RP2040)
   analogWriteFrequency(MEASURED_VOLT_OUT, 10000);
@@ -47,7 +47,7 @@ void update_voltage() {
   if (norm > 1.0f) norm = 1.0f;
   norm = clamp_with_deadbands_0to1(norm);
 
-#if defined(ARDUINO_ARCH_STM32)
+#if defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_MBED)
   measured_pwm_set_voltage_norm(norm);
 #else
   int duty8 = (int)(norm * 255.0f + 0.5f);
