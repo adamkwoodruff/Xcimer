@@ -1,6 +1,7 @@
 #include "Voltage.h"
 #include "PowerState.h"
 #include "Config.h"
+#include "MeasuredPWM.h"
 
 // 100% duty reference for measured voltage display
 static constexpr float VOLTAGE_PWM_FULL_SCALE = 200.0f;
@@ -22,10 +23,11 @@ void init_voltage() {
   pinMode(APIN_VOLTAGE_PROBE, INPUT);
   pinMode(MEASURED_VOLT_OUT, OUTPUT);
 
-  // Target 10 kHz PWM on MEASURED_VOLT_OUT, if supported
-  #if defined(TEENSYDUINO) || defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_RP2040)
-    analogWriteFrequency(MEASURED_VOLT_OUT, 10000);
-  #endif
+#if defined(ARDUINO_ARCH_STM32)
+  measured_pwm_init();
+#elif defined(TEENSYDUINO) || defined(ARDUINO_ARCH_RP2040)
+  analogWriteFrequency(MEASURED_VOLT_OUT, 10000);
+#endif
 }
 
 void update_voltage() {
@@ -45,6 +47,10 @@ void update_voltage() {
   if (norm > 1.0f) norm = 1.0f;
   norm = clamp_with_deadbands_0to1(norm);
 
+#if defined(ARDUINO_ARCH_STM32)
+  measured_pwm_set_voltage_norm(norm);
+#else
   int duty8 = (int)(norm * 255.0f + 0.5f);
   analogWrite(MEASURED_VOLT_OUT, duty8);
+#endif
 }

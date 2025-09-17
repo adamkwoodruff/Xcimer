@@ -1,6 +1,7 @@
 #include "Current.h"
 #include "PowerState.h"
 #include "Config.h"
+#include "MeasuredPWM.h"
 
 // Helper: clamp with 5%/95% deadbands on normalized [0..1]
 static inline float clamp_with_deadbands_0to1(float x) {
@@ -19,10 +20,11 @@ void init_current() {
   pinMode(APIN_CURRENT_PROBE, INPUT);
   pinMode(MEASURED_CURR_OUT, OUTPUT);
 
-  // Target 10 kHz PWM on MEASURED_CURR_OUT, if supported on this core
-  #if defined(TEENSYDUINO) || defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_RP2040)
-    analogWriteFrequency(MEASURED_CURR_OUT, 10000);
-  #endif
+#if defined(ARDUINO_ARCH_STM32)
+  measured_pwm_init();
+#elif defined(TEENSYDUINO) || defined(ARDUINO_ARCH_RP2040)
+  analogWriteFrequency(MEASURED_CURR_OUT, 10000);
+#endif
   // Keep default resolution used by analogWrite()
 }
 
@@ -53,8 +55,12 @@ void update_current() {
   float duty_norm = scaled0to3000 / 3000.0f;
   duty_norm = clamp_with_deadbands_0to1(duty_norm);
 
+#if defined(ARDUINO_ARCH_STM32)
+  measured_pwm_set_current_norm(duty_norm);
+#else
   int duty8 = (int)(duty_norm * 255.0f + 0.5f);
   analogWrite(MEASURED_CURR_OUT, duty8);
+#endif
 
   // NOTE: IGBT HI PWM is now handled in IGBT.cpp (not here).
 }
