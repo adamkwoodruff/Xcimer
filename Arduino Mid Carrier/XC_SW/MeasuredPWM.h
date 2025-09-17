@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#ifdef ARDUINO_ARCH_STM32
+#if defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_MBED)
 // Initializes the shared timer driving the measured voltage/current outputs.
 void measured_pwm_init();
 // Update the PWM duty for the voltage feedback (normalized 0.0..1.0).

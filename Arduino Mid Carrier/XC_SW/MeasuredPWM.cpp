@@ -1,6 +1,6 @@
 #include "MeasuredPWM.h"
 
-#ifdef ARDUINO_ARCH_STM32
+#if defined(ARDUINO_ARCH_STM32)
 
 #include "Config.h"
 
@@ -120,5 +120,58 @@ void measured_pwm_set_current_norm(float duty_norm) {
   __HAL_TIM_SET_COMPARE(&s_measuredTim, TIM_CHANNEL_3, duty_to_compare(duty_norm));
 }
 
-#endif  // ARDUINO_ARCH_STM32
+#elif defined(ARDUINO_ARCH_MBED)
+
+#include "Config.h"
+
+#include "mbed.h"
+
+namespace {
+
+constexpr uint32_t kTargetFreqHz = 10000U;
+
+mbed::PwmOut s_voltagePwm(MEASURED_VOLT_OUT);
+mbed::PwmOut s_currentPwm(MEASURED_CURR_OUT);
+bool   s_initialized = false;
+
+float clamp_norm(float duty_norm) {
+  if (duty_norm <= 0.0f) {
+    return 0.0f;
+  }
+  if (duty_norm >= 1.0f) {
+    return 1.0f;
+  }
+  return duty_norm;
+}
+
+void ensure_initialized() {
+  if (s_initialized) {
+    return;
+  }
+  s_initialized = true;
+
+  const uint32_t period_us = 1000000UL / kTargetFreqHz;
+  s_voltagePwm.period_us(period_us);
+  s_currentPwm.period_us(period_us);
+  s_voltagePwm.write(0.0f);
+  s_currentPwm.write(0.0f);
+}
+
+}  // namespace
+
+void measured_pwm_init() {
+  ensure_initialized();
+}
+
+void measured_pwm_set_voltage_norm(float duty_norm) {
+  ensure_initialized();
+  s_voltagePwm.write(clamp_norm(duty_norm));
+}
+
+void measured_pwm_set_current_norm(float duty_norm) {
+  ensure_initialized();
+  s_currentPwm.write(clamp_norm(duty_norm));
+}
+
+#endif  // ARDUINO_ARCH_STM32 / ARDUINO_ARCH_MBED
 
