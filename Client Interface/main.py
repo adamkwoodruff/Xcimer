@@ -52,15 +52,14 @@ CONFIG_KEY = bytes([0x3A, 0x7F, 0x0C, 0xD5])
 CMD_MAP_INV = {'CONFIG': 0x83}  # Only need to know the response command
 CMD_MAP = {v: k for k, v in CMD_MAP_INV.items()}
 SIGNAL_MAP = {
+    "SW_GET_VERSION": 0x01,
     "volt_set": 0x04, "curr_set": 0x05, "volt_act": 0x06, "curr_act": 0x07,
     "mode_set": 0x08, "inter_enable": 0x09, "extern_enable": 0x0A,
-    "warn_lamp": 0x0B, "ps_disable": 0x0C, "pwm_enable": 0x0D, "pwm_reset": 0x0E,
+    "warn_lamp": 0x0B, "dump_relay": 0x0C, "dump_fan": 0x0D, "charger_relay": 0x0E,
     "output_enable": 0x0F,
-    "SW_GET_VERSION": 0x01,
-    "t1": 0x13, "th": 0x14, "t2": 0x15,
-    "a1": 0x16, "b1": 0x17, "c1": 0x18, "d1": 0x19,
-    "a2": 0x20, "b2": 0x21, "c2": 0x23, "d2": 0x24,
-    "run_current_wave": 0x25
+    "scr_trig": 0x10, "scr_inhib": 0x11, "igbt_fault": 0x12,
+    "t1": 0x13, "th": 0x14, "t2": 0x15, "a1": 0x16, "b1": 0x17,
+    "c1": 0x18, "d1": 0x19, "a2": 0x20, "b2": 0x21, "c2": 0x22, "d2": 0x23, "run_current_wave": 0x24, "internal_temp": 0x25
 }
 SIGNAL_ID_TO_NAME = {v: k for k, v in SIGNAL_MAP.items()}
 LATEST_VALUES = {}
