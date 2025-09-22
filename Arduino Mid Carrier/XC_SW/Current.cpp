@@ -3,13 +3,6 @@
 #include "Config.h"
 #include "MeasuredPWM.h"
 
-// Helper: clamp with 5%/95% deadbands on normalized [0..1]
-static inline float clamp_with_deadbands_0to1(float x) {
-  if (x <= 0.05f) return 0.0f;
-  if (x >= 0.95f) return 1.0f;
-  return x;
-}
-
 static AnalogReadFunc currentReader = nullptr;
 
 void set_current_analog_reader(AnalogReadFunc func) {
@@ -24,6 +17,8 @@ void init_current() {
   measured_pwm_init();
 #elif defined(TEENSYDUINO) || defined(ARDUINO_ARCH_RP2040)
   analogWriteFrequency(MEASURED_CURR_OUT, 10000);
+#elif defined(ARDUINO_ARCH_RENESAS)
+  setPWMFreq(MEASURED_CURR_OUT, 10000);
 #endif
   // Keep default resolution used by analogWrite()
 }
@@ -45,15 +40,11 @@ void update_current() {
   PowerState::ScrInhib = !fire;     // false -> pin HIGH (fire)
 
 
-  // ----- Map probe current −4250…+4250 A → 0…3000 A -----
-  // Linear map: -4250 → 0 ; +4250 → 3000
-  float scaled0to3000 = (PowerState::probeCurrent + 4250.0f) * (3000.0f / 8500.0f);
-  if (scaled0to3000 < 0.0f)   scaled0to3000 = 0.0f;
-  if (scaled0to3000 > 3000.0f) scaled0to3000 = 3000.0f;
-
-  // Normalize to 0..1 and apply deadbands (5%/95%)
-  float duty_norm = scaled0to3000 / 3000.0f;
-  duty_norm = clamp_with_deadbands_0to1(duty_norm);
+  // ----- Map probe current −4250…+4250 A linearly to 0…100% duty -----
+  // Linear map: -4250 A → 0% ; 0 A → 50% ; +4250 A → 100%
+  float duty_norm = (PowerState::probeCurrent + 4250.0f) / 8500.0f;
+  if (duty_norm < 0.0f)   duty_norm = 0.0f;
+  if (duty_norm > 1.0f)   duty_norm = 1.0f;
 
 #if defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_MBED)
   measured_pwm_set_current_norm(duty_norm);
