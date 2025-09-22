@@ -45,7 +45,7 @@ void setup() {
   // --- RPC Setup ---
   RPC.bind("get_sync_status", []() -> uint16_t {
     uint16_t status = m4_sync_done ? M4_STATUS_SYNCED : M4_STATUS_NOT_SYNCED;
-    Serial.print("[SYNC] Status Check → ");
+   
     //Serial.println(status, HEX);
     return status;
   });
@@ -61,7 +61,7 @@ void setup() {
     StaticJsonDocument<512> doc;
     DeserializationError err = deserializeJson(doc, jsonString);
     if (err) {
-      Serial.print("0xA0FF - JSON Error: ");
+
       //Serial.println(err.c_str());
       m4_status = M4_STATUS_ERROR;
       return;

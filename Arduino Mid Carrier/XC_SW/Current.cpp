@@ -29,7 +29,7 @@ void update_current() {
                                 : analogRead(APIN_CURRENT_PROBE);
   float vin     = (raw_adc / 4095.0f) * 3.3f;
   float calcCur = (vin - 1.65f);
-  calcCur       = calcCur / (VScale_C);
+  calcCur       = calcCur * (VScale_C);
   PowerState::probeCurrent = -(calcCur + VOffset_C);
 
   constexpr float SCR_FIRE_A = 3200.0f;
@@ -46,12 +46,11 @@ void update_current() {
   if (duty_norm < 0.0f)   duty_norm = 0.0f;
   if (duty_norm > 1.0f)   duty_norm = 1.0f;
 
-#if defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_MBED)
-  measured_pwm_set_current_norm(duty_norm);
-#else
-  int duty8 = (int)(duty_norm * 255.0f + 0.5f);
-  analogWrite(MEASURED_CURR_OUT, duty8);
-#endif
+  #if defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_MBED)
+    measured_pwm_set_current_norm(duty_norm);
+  #else
+    int duty8 = (int)(duty_norm * 255.0f + 0.5f);
+    analogWrite(MEASURED_CURR_OUT, duty8);
+  #endif
 
-  // NOTE: IGBT HI PWM is now handled in IGBT.cpp (not here).
 }

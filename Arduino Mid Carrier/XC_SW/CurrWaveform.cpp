@@ -1,9 +1,9 @@
 #include "CurrWaveform.h"
 #include "Config.h"
 #include "PowerState.h"
-#include <Arduino.h> // Required for Serial communication
-#include <stdio.h>   // Required for snprintf
+#include <Arduino.h>
 
+// cubic helper
 static inline float poly3(float A, float B, float C, float D, float s) {
     return ((D * s + C) * s + B) * s + A;
 }
@@ -11,60 +11,77 @@ static inline float poly3(float A, float B, float C, float D, float s) {
 void update_curr_waveform(float dt) {
     static float t = 0.0f;
     static bool running = false;
+    static bool prevOutputEnabled = false;
 
-    // Trigger condition: Check if a new waveform run is requested
-    if (PowerState::runCurrentWave && !running) {
+    const bool outEn = PowerState::outputEnabled;
+
+    // Rising-edge trigger on external-enabled output
+    if (outEn && !prevOutputEnabled && !running) {
         t = 0.0f;
         running = true;
-        // FIX 1: Consume the trigger immediately so it can be re-triggered later.
-        
-        Serial.println("[RPC DEBUG] Waveform triggered. Resetting time t=0.0");
     }
 
-    if (!running) {
-        // If not running, ensure the set current is zero and do nothing else.
+    // Abort immediately if output is disabled mid-run
+    if (!outEn && running) {
+        running = false;
         PowerState::setCurrent = 0.0f;
+        PowerState::runCurrentWave = false; // status only
+        prevOutputEnabled = outEn;
         return;
     }
 
-    float y_raw = 0.0f;
-    float A, B, C, D;
+    // Publish status flag (status, not a control)
+    PowerState::runCurrentWave = running;
 
-    const float t1 = PowerState::currT1;
-    const float t_hold = PowerState::currTHold;
-    const float t2 = PowerState::currT2;
-    const float t2_start = t1 + t_hold;
-    const float t_end = t2_start + t2;
-
-    if (t < t2_start) { // Ramp Up and Hold phases
-        A = PowerState::currA1; B = PowerState::currB1; C = PowerState::currC1; D = PowerState::currD1;
-        if (t < t1 && t1 > 0.0f) {
-            float s = t / t1;
-            y_raw = poly3(A, B, C, D, s);
-        } else {
-            y_raw = poly3(A, B, C, D, 1.0f);
-        }
-    } else if (t < t_end && t2 > 0.0f) { // Ramp Down phase
-        A = PowerState::currA2; B = PowerState::currB2; C = PowerState::currC2; D = PowerState::currD2;
-        float s = (t - t2_start) / t2;
-        y_raw = poly3(A, B, C, D, s);
-    } else { // Finished
-        // The sequence is over, stop running. The current will be set to 0 below.
-        running = false; 
-        PowerState::runCurrentWave = false;
-    }
-
-    // FIX 2: If the waveform just finished, set current to 0. Otherwise, use the calculated value.
-    if (!running) { 
+    if (!running) {
         PowerState::setCurrent = 0.0f;
-        Serial.println("[RPC DEBUG] Waveform finished. Setting current to 0.");
-    } else {
-        // Clamp the calculated value while running
-        float y_clamped = y_raw;
-        if (y_clamped < 0.0f) y_clamped = 0.0f;
-        if (y_clamped > CURRENT_LIMIT_MAX) y_clamped = CURRENT_LIMIT_MAX;
-        PowerState::setCurrent = y_clamped;
+        prevOutputEnabled = outEn;
+        return;
     }
 
+    // --- segment timing ---
+    float t1     = PowerState::currT1;     if (t1     < 0.0f) t1     = 0.0f;
+    float t_hold = PowerState::currTHold;  if (t_hold < 0.0f) t_hold = 0.0f;
+    float t2     = PowerState::currT2;     if (t2     < 0.0f) t2     = 0.0f;
+
+    const float T2_EPS = 1e-6f;                  // ensure we enter ramp-down branch
+    const float t2_eff = (t2 <= 0.0f) ? T2_EPS : t2;
+
+    const float t2_start = t1 + t_hold;
+    const float t_end    = t2_start + t2_eff;
+
+    // --- evaluate waveform (NO locals named D1/D2!) ---
+    float y_raw = 0.0f;
+
+    if (t < t1) {
+        const float s = (t1 > 0.0f) ? (t / t1) : 1.0f;
+        y_raw = poly3(PowerState::currA1, PowerState::currB1,
+                      PowerState::currC1, PowerState::currD1, s);
+    } else if (t < t2_start) {
+        // Hold: end value of the first polynomial
+        y_raw = poly3(PowerState::currA1, PowerState::currB1,
+                      PowerState::currC1, PowerState::currD1, 1.0f);
+    } else if (t < t_end) {
+        const float s = (t - t2_start) / t2_eff;
+        y_raw = poly3(PowerState::currA2, PowerState::currB2,
+                      PowerState::currC2, PowerState::currD2, s);
+    } else {
+        // Finished
+        running = false;
+        PowerState::runCurrentWave = false; // status
+        PowerState::setCurrent = 0.0f;
+        prevOutputEnabled = outEn;
+        return;
+    }
+
+    // Clamp and publish
+    float y = y_raw;
+    if (y < 0.0f) y = 0.0f;
+    if (y > CURRENT_LIMIT_MAX) y = CURRENT_LIMIT_MAX;
+    PowerState::setCurrent = y;
+
+    // Advance time base
+    if (dt < 0.0f) dt = 0.0f;
     t += dt;
+    prevOutputEnabled = outEn;
 }

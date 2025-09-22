@@ -51,7 +51,13 @@ extern const float WARN_VOLTAGE_THRESHOLD;      // Voltage threshold for warning
 
 // --- Control Parameters ---
 extern const float CURRENT_LIMIT_MAX;        // Maximum allowable set current
-extern const float OVER_VOLTAGE_LIMIT;       // Disable current above this voltage
+extern const float OVER_VOLTAGE_LIMIT;       // Disable current above this voltage 
+
+// --- Current/IGBT control limits ---
+extern const float MIN_LOAD_RES_OHM;     // e.g. 0.010 Ω (cold)
+extern const float IGBT_MIN_DUTY_PCT;    // e.g. 5 %  (too-short ON guard)
+extern const float IGBT_MAX_DUTY_PCT;    // e.g. 95 % (too-short OFF guard)
+
 
 
 // Centralized power state manager
