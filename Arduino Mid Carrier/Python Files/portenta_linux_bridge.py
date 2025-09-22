@@ -354,6 +354,22 @@ POLY_KEYS = {
     "a2", "b2", "c2", "d2",
 }
 
+CALIBRATION_KEYS = [
+    "curr_scale",
+    "curr_offset",
+    "volt_scale",
+    "volt_offset",
+    "volt_pwm_full_scale",
+    "min_load_res_ohm",
+    "igbt_min_duty_pct",
+    "igbt_max_duty_pct",
+    "current_limit_max",
+    "over_voltage_limit",
+    "warn_voltage_threshold",
+    "warn_blink_interval_ms",
+    "debounce_delay_us",
+]
+
 
 def set_signal_value(name: str, value: float, src: str = "unknown") -> None:
     with DATA_LOCK:
@@ -417,6 +433,35 @@ def send_polynomial_values_to_m4(repeat: int = 3, delay: float = 0.05) -> None:
             call_m4_rpc("process_event_in_uc", payload)
             time.sleep(delay)
 
+
+def send_calibration_values_to_m4(repeat: int = 2, delay: float = 0.05) -> None:
+    """Transmit calibration constants from TRUE_VALUES to the M4.
+
+    Args:
+        repeat: Number of times each calibration value should be sent.
+        delay:  Pause in seconds between transmissions of individual values.
+    """
+    with DATA_LOCK:
+        entries = [
+            (name, TRUE_VALUES.get(name))
+            for name in CALIBRATION_KEYS
+            if name in TRUE_VALUES and TRUE_VALUES.get(name) is not None
+        ]
+
+    if not entries:
+        print("[Cal] No calibration values found in TRUE_VALUES; skipping send.")
+        return
+
+    print(f"[Cal] Sending {len(entries)} calibration values to M4 via RPC...")
+    for _ in range(max(1, repeat)):
+        for name, value in entries:
+            payload = json.dumps({"display_event": {"name": name, "value": value}})
+            try:
+                call_m4_rpc("process_event_in_uc", payload)
+                print(f"[Cal]   {name} = {value}")
+            except Exception as exc:
+                print(f"[Cal]   Failed to send '{name}': {exc}")
+            time.sleep(delay)
 
 # Binary UDP protocol constants
 DEFAULT_SIGN_KEY = bytes.fromhex(('57 4F 4F 44 52 55 46 46 ' * 16).replace(' ', ''))
@@ -749,6 +794,12 @@ def initialize_true_values(cfg):
         mode_val = 1 if str(mode_str).lower() == "remote" else 0
         set_signal_value("mode_set", mode_val)
         CURRENT_MODE = "remote" if mode_val else "local"
+
+        # Ensure all known signals, including calibrations, are mirrored into the
+        # SIGNAL_DB store so downstream broadcasts reflect the configured values.
+        for name, value in TRUE_VALUES.items():
+            if name in SIGNAL_DB:
+                SIGNAL_DB[name].value = float(value)
 
         for name in SIGNAL_IDS:
             if name == "SW_GET_VERSION":
@@ -1253,6 +1304,7 @@ if __name__ == "__main__":
     m4_polls_config = config_data.get("m4_data_polls", [])
     build_poll_name_map(m4_polls_config)
     verify_m4_rpc_bindings()
+    send_calibration_values_to_m4()
     
     # --- Step 5: Start network listeners and serial port ---
     udp_thread = threading.Thread(target=udp_listener, daemon=True)

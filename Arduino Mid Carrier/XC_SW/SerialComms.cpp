@@ -110,8 +110,69 @@ int process_event_in_uc(const std::string& json_event_std)
     else if (strcmp(name, "b2") == 0)  { PowerState::currB2    = value; return 1; }
     else if (strcmp(name, "c2") == 0)  { PowerState::currC2    = value; return 1; }
     else if (strcmp(name, "d2") == 0)  { PowerState::currD2    = value; return 1; }
-
-
+    else if (strcmp(name, "curr_scale") == 0) {
+      VScale_C = value;
+      return 1;
+    }
+    else if (strcmp(name, "curr_offset") == 0) {
+      VOffset_C = value;
+      return 1;
+    }
+    else if (strcmp(name, "volt_scale") == 0) {
+      VScale_V = value;
+      return 1;
+    }
+    else if (strcmp(name, "volt_offset") == 0) {
+      VOffset_V = value;
+      return 1;
+    }
+    else if (strcmp(name, "volt_pwm_full_scale") == 0) {
+      if (value < 1.0f) value = 1.0f;
+      VOLTAGE_PWM_FULL_SCALE = value;
+      return 1;
+    }
+    else if (strcmp(name, "min_load_res_ohm") == 0) {
+      if (value <= 0.0f) value = 1e-6f;
+      MIN_LOAD_RES_OHM = value;
+      return 1;
+    }
+    else if (strcmp(name, "igbt_min_duty_pct") == 0) {
+      if (value < 0.0f) value = 0.0f;
+      if (value > 100.0f) value = 100.0f;
+      IGBT_MIN_DUTY_PCT = value;
+      return 1;
+    }
+    else if (strcmp(name, "igbt_max_duty_pct") == 0) {
+      if (value < 0.0f) value = 0.0f;
+      if (value > 100.0f) value = 100.0f;
+      IGBT_MAX_DUTY_PCT = value;
+      return 1;
+    }
+    else if (strcmp(name, "current_limit_max") == 0) {
+      if (value < 0.0f) value = 0.0f;
+      CURRENT_LIMIT_MAX = value;
+      return 1;
+    }
+    else if (strcmp(name, "over_voltage_limit") == 0) {
+      if (value < 0.0f) value = 0.0f;
+      OVER_VOLTAGE_LIMIT = value;
+      return 1;
+    }
+    else if (strcmp(name, "warn_voltage_threshold") == 0) {
+      if (value < 0.0f) value = 0.0f;
+      WARN_VOLTAGE_THRESHOLD = value;
+      return 1;
+    }
+    else if (strcmp(name, "warn_blink_interval_ms") == 0) {
+      if (value < 0.0f) value = 0.0f;
+      WARN_BLINK_INTERVAL_MS = (unsigned long)(value + 0.5f);
+      return 1;
+    }
+    else if (strcmp(name, "debounce_delay_us") == 0) {
+      if (value < 0.0f) value = 0.0f;
+      DEBOUNCE_DELAY_US = (unsigned long)(value + 0.5f);
+      return 1;
+    }
 
 
     return 0; // unknown name

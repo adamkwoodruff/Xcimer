@@ -1054,7 +1054,13 @@
       "warn_lamp": 0, "dump_relay": 0, "dump_fan": 1, "charger_relay": 0,
       "mode_set": 0, "scr_trig": 0, "scr_inhib": 0, "igbt_fault": 0,
       "t1": 0, "a1": 0, "b1": 0, "c1": 0, "d1": 0,
-      "t2": 0, "a2": 0, "b2": 0, "c2": 0, "d2": 0, "th": 0, "run_current_wave": 0
+      "t2": 0, "a2": 0, "b2": 0, "c2": 0, "d2": 0, "th": 0, "run_current_wave": 0,
+      "curr_scale": 25.0, "curr_offset": 0.0, "volt_scale": 25.0, "volt_offset": 0.0,
+      "volt_pwm_full_scale": 400.0, "min_load_res_ohm": 0.01,
+      "igbt_min_duty_pct": 5.0, "igbt_max_duty_pct": 95.0,
+      "current_limit_max": 3000.0, "over_voltage_limit": 285.0,
+      "warn_voltage_threshold": 50.0, "warn_blink_interval_ms": 5000,
+      "debounce_delay_us": 1000
     },
     "signal_ids": {
       "SW_GET_VERSION": "0x01",
@@ -1064,7 +1070,13 @@
       "output_enable": "0x0F",
       "scr_trig": "0x10", "scr_inhib": "0x11", "igbt_fault": "0x12",
       "t1": "0x13", "th": "0x14", "t2": "0x15", "a1": "0x16", "b1": "0x17",
-      "c1": "0x18", "d1": "0x19", "a2": "0x20", "b2": "0x21", "c2": "0x23", "d2": "0x24", "run_current_wave": "0x25"
+      "c1": "0x18", "d1": "0x19", "a2": "0x20", "b2": "0x21", "c2": "0x23", "d2": "0x24", "run_current_wave": "0x25",
+      "curr_scale": "0x30", "curr_offset": "0x31", "volt_scale": "0x32", "volt_offset": "0x33",
+      "volt_pwm_full_scale": "0x34", "min_load_res_ohm": "0x35",
+      "igbt_min_duty_pct": "0x36", "igbt_max_duty_pct": "0x37",
+      "current_limit_max": "0x38", "over_voltage_limit": "0x39",
+      "warn_voltage_threshold": "0x3A", "warn_blink_interval_ms": "0x3B",
+      "debounce_delay_us": "0x3C"
     },
     "expected_types": {
       "volt_act": ["float", "int"],
@@ -1083,22 +1095,41 @@
       "b2": ["float", "int"],
       "c2": ["float", "int"],
       "d2": ["float", "int"],
-      "th": ["float", "int"]
+      "th": ["float", "int"],
+      "curr_scale": ["float", "int"],
+      "curr_offset": ["float", "int"],
+      "volt_scale": ["float", "int"],
+      "volt_offset": ["float", "int"],
+      "volt_pwm_full_scale": ["float", "int"],
+      "min_load_res_ohm": ["float", "int"],
+      "igbt_min_duty_pct": ["float", "int"],
+      "igbt_max_duty_pct": ["float", "int"],
+      "current_limit_max": ["float", "int"],
+      "over_voltage_limit": ["float", "int"],
+      "warn_voltage_threshold": ["float", "int"],
+      "warn_blink_interval_ms": ["float", "int"],
+      "debounce_delay_us": ["float", "int"]
     },
     "bool_names": [
       "extern_enable", "inter_enable", "warn_lamp",
       "dump_relay", "dump_fan", "charger_relay",
       "scr_trig", "scr_inhib", "igbt_fault", "run_current_wave"
     ],
-		"truth_push_keys": [
-		  "volt_set", "curr_set",
-		  "inter_enable", "extern_enable", "warn_lamp",
-		  "dump_relay", "dump_fan", "charger_relay", "mode_set",
-		  "scr_trig", "scr_inhib", "igbt_fault", "run_current_wave",
-		  "t1", "th", "t2",
-		  "a1", "b1", "c1", "d1",
-		  "a2", "b2", "c2", "d2"
-		]
+    "truth_push_keys": [
+      "volt_set", "curr_set",
+      "inter_enable", "extern_enable", "warn_lamp",
+      "dump_relay", "dump_fan", "charger_relay", "mode_set",
+      "scr_trig", "scr_inhib", "igbt_fault", "run_current_wave",
+      "t1", "th", "t2",
+      "a1", "b1", "c1", "d1",
+      "a2", "b2", "c2", "d2",
+      "curr_scale", "curr_offset", "volt_scale", "volt_offset",
+      "volt_pwm_full_scale", "min_load_res_ohm",
+      "igbt_min_duty_pct", "igbt_max_duty_pct",
+      "current_limit_max", "over_voltage_limit",
+      "warn_voltage_threshold", "warn_blink_interval_ms",
+      "debounce_delay_us"
+    ]
 
   }
 }
