@@ -3,9 +3,6 @@
 #include "Config.h" 
 #include "SerialRPC.h"
 
-// 100% duty reference for measured voltage display
-static constexpr float VOLTAGE_PWM_FULL_SCALE = 400.0f; //NEEDS UPDATING
-
 static AnalogReadFunc voltageReader = nullptr;
 
 void set_voltage_analog_reader(AnalogReadFunc func) {
@@ -36,7 +33,12 @@ void update_voltage() {
 
 
   // --- Normalize and generate PWM output ---
-  float norm = calcVolt / VOLTAGE_PWM_FULL_SCALE;
+  float scale = VOLTAGE_PWM_FULL_SCALE;
+  if (scale <= 0.0f) {
+    scale = 1.0f; // prevent divide-by-zero if misconfigured
+  }
+
+  float norm = calcVolt / scale;
   if (norm < 0.0f) norm = 0.0f;
   if (norm > 1.0f) norm = 1.0f;
 

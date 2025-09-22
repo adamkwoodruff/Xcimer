@@ -37,26 +37,28 @@ extern const uint8_t IGBT_PWM_RESOLUTION_BITS; // 12-bit
 #define HW_INPUT_PIN_MODE     INPUT_PULLDOWN // Or INPUT_PULLUP if active-low
 
 // --- Calibration Constants (!!! REPLACE WITH ACTUAL VALUES !!!) ---
-extern const float VScale_V;
-extern const float VOffset_V;
-extern const float VScale_C;
-extern const float VOffset_C;
+extern float VScale_V;
+extern float VOffset_V;
+extern float VScale_C;
+extern float VOffset_C;
+
+extern float VOLTAGE_PWM_FULL_SCALE; // Full-scale value used for measured voltage PWM output
 
 // --- Debounce Parameters ---
-extern const unsigned long DEBOUNCE_DELAY_US; // Debounce time in microseconds
+extern unsigned long DEBOUNCE_DELAY_US; // Debounce time in microseconds
 
 // --- Warning Lamp Parameters ---
-extern const unsigned long WARN_BLINK_INTERVAL_MS; // Blink half-period
-extern const float WARN_VOLTAGE_THRESHOLD;      // Voltage threshold for warning
+extern unsigned long WARN_BLINK_INTERVAL_MS; // Blink half-period
+extern float WARN_VOLTAGE_THRESHOLD;      // Voltage threshold for warning
 
 // --- Control Parameters ---
-extern const float CURRENT_LIMIT_MAX;        // Maximum allowable set current
-extern const float OVER_VOLTAGE_LIMIT;       // Disable current above this voltage 
+extern float CURRENT_LIMIT_MAX;        // Maximum allowable set current
+extern float OVER_VOLTAGE_LIMIT;       // Disable current above this voltage
 
 // --- Current/IGBT control limits ---
-extern const float MIN_LOAD_RES_OHM;     // e.g. 0.010 Ω (cold)
-extern const float IGBT_MIN_DUTY_PCT;    // e.g. 5 %  (too-short ON guard)
-extern const float IGBT_MAX_DUTY_PCT;    // e.g. 95 % (too-short OFF guard)
+extern float MIN_LOAD_RES_OHM;     // e.g. 0.010 Ω (cold)
+extern float IGBT_MIN_DUTY_PCT;    // e.g. 5 %  (too-short ON guard)
+extern float IGBT_MAX_DUTY_PCT;    // e.g. 95 % (too-short OFF guard)
 
 
 
