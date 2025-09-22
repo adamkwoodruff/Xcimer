@@ -40,7 +40,7 @@ CONFIG_LOCAL_PORT = 10007
 
 udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 udp_sock.bind(("", LOCAL_PORT))
 #print(f"[Init] Web client socket bound to port {LOCAL_PORT}")
@@ -56,10 +56,9 @@ SIGNAL_MAP = {
     "volt_set": 0x04, "curr_set": 0x05, "volt_act": 0x06, "curr_act": 0x07,
     "mode_set": 0x08, "inter_enable": 0x09, "extern_enable": 0x0A,
     "warn_lamp": 0x0B, "dump_relay": 0x0C, "dump_fan": 0x0D, "charger_relay": 0x0E,
-    "output_enable": 0x0F,
-    "scr_trig": 0x10, "scr_inhib": 0x11, "igbt_fault": 0x12,
+    "output_enable": 0x0F, "scr_trig": 0x10, "scr_inhib": 0x11, "igbt_fault": 0x12,
     "t1": 0x13, "th": 0x14, "t2": 0x15, "a1": 0x16, "b1": 0x17,
-    "c1": 0x18, "d1": 0x19, "a2": 0x20, "b2": 0x21, "c2": 0x22, "d2": 0x23, "run_current_wave": 0x24, "internal_temp": 0x25
+    "c1": 0x18, "d1": 0x19, "a2": 0x20, "b2": 0x21, "c2": 0x23, "d2": 0x24, "run_current_wave": 0x25
 }
 SIGNAL_ID_TO_NAME = {v: k for k, v in SIGNAL_MAP.items()}
 LATEST_VALUES = {}
@@ -206,7 +205,7 @@ def api_get_config():
     end_time = time.time() + 2.0
 
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as cfg_sock:
-        cfg_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        cfg_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         cfg_sock.bind(("", CONFIG_LOCAL_PORT))  # Use a dedicated source port
         cfg_sock.settimeout(0.5)
         cfg_sock.sendto(packet, (PORTENTA_IP, PORTENTA_PORT))
@@ -324,10 +323,10 @@ if __name__ == "__main__":
     listener = threading.Thread(target=udp_listener_thread, daemon=True)
     listener.start()
 
-    ip = "0.0.0.0"
+    ip = "127.0.0.1"
     port = 8009
     url = f"http://{ip}:{port}"
     print(f"Starting Flask server — access the web interface at: {url}")
     webbrowser.open(url)  # Optional: will open in default browser on Linux with GUI
 
-    socketio.run(app, host="0.0.0.0", port=port)
+    socketio.run(app, host="127.0.0.1", port=port)
