@@ -86,17 +86,6 @@
         "type": "control",
         "title": "Current Control",
         "buttons": [
-          {
-            "id": 1,
-            "visible": true,
-            "disable": false,
-            "action": {
-              "name": "run_current_wave",
-              "do": "toggle"
-            },
-            "text": "Run Current Waveform",
-            "event_dest": "uc"
-          }
         ],
         "labels": [
           {

@@ -189,38 +189,31 @@ def send_log_message(message: str) -> None:
         try:
             udp_sock.sendto(log_packet, client)
         except Exception as e:
-            builtins.print(f"[LOG] Failed to send log to {client}: {e}") 
+            builtins.print(f"[LOG] Failed to send log to {client}: {e}")  
+            
+M4_OWNED_SIGNALS = {"volt_act", "curr_act", "extern_enable", "output_enable", "igbt_fault"} 
             
 def update_and_broadcast(name, value, src="linux"):
+    """
+    Main handler to update a signal's value and broadcast it to all interfaces,
+    using predefined tables for logic.
+    """
     with DATA_LOCK:
-        if name in (
-            "volt_set",
-            "curr_set",
-            "inter_enable",
-            "warn_lamp",
-            "dump_fan",
-            "dump_relay",
-            "charger_relay",
-            "mode_set",
-            "igbt_fault",
-            "scr_trig",
-            "scr_inhib",
-            "t1",
-            "th",
-            "t2",
-        ) and value < 0:
-            value = 0
-        if name in (
-            "volt_act",
-            "curr_act",       
-            "extern_enable",   
-        ) and src == "udp":
-            print(f"[Store] Skipping update of {name} from UDP (M4-owned).")
+            
+        # 2. Prevent M4-owned (read-only) signals from being overwritten by UDP
+        if name in M4_OWNED_SIGNALS and src == "udp":
+            print(f"[Store] Skipping update of read-only value '{name}' from UDP.")
             return
+            
+        # This function correctly forwards the value to the M4
         set_signal_value(name, value, src=src)
+
+        # Update the local/remote mode status
         if name == "mode_set":
             global CURRENT_MODE
             CURRENT_MODE = "remote" if float(value) >= 0.5 else "local"
+            
+        # Broadcast the new value to all connected clients
         broadcast_binary_value(name, value)
         send_to_giga({"display_event": {"type": "set_value", "name": name, "value": value, "src": src}})
         print(f"\u2192 set [{src}] {name} = {value}")
@@ -363,33 +356,31 @@ POLY_KEYS = {
 
 
 def set_signal_value(name: str, value: float, src: str = "unknown") -> None:
-    """Safely update both the signal database and generic value store with debug,
-    and forward changes for bools + waveform params to the M4."""
     with DATA_LOCK:
-        prev = SIGNAL_DB[name].value if name in SIGNAL_DB else TRUE_VALUES.get(name, 0.0)
+        prev = TRUE_VALUES.get(name, 0.0)
         valf = float(value)
-
+        
+        # Update the local value stores
         if name in SIGNAL_DB:
             SIGNAL_DB[name].value = valf
         TRUE_VALUES[name] = valf
 
         delta = valf - float(prev)
-        print(f"[Store] {src} updated '{name}': prev={prev} delta={delta} new={valf}")
+        print(f"[Store] {src} updated '{name}': prev={prev:.2f} delta={delta:.2f} new={valf:.2f}")
 
-        # Only forward changes that originate on the Linux side
-        # (avoid echoing values we *just* read back from the uC/RPC).
         if src in ("rpc", "uc"):
             return
 
-        # Forward booleans *and* polynomial/timing keys
-        if (name in BOOL_NAMES) or (name in POLY_KEYS):
-            # (Optional) avoid spamming identical values
-            if abs(delta) < 1e-12:
+        if name in TRUTH_PUSH_KEYS:
+            if abs(delta) < 1e-9: # Don't send updates if the value hasn't changed
                 return
 
             payload_value = int(valf) if name in BOOL_NAMES else valf
             payload = json.dumps({"display_event": {"name": name, "value": payload_value}})
+            
+            print(f"[Forward] Sending '{name}' -> {payload_value} to M4...")
             call_m4_rpc("process_event_in_uc", payload)
+
 
 
 
