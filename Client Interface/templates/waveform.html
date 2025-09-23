@@ -400,10 +400,12 @@
       });
     }
     async function sendAllValues() {
-      const v = readValues();
+      const units = $("units").value;
+      const factor = units === "ms" ? 1 : 1000;
       for (const n of names) {
-        const val = parseFloat($(n).value || '0');
-        await sendCommand(n, val);
+        const raw = parseFloat($(n).value || '0');
+        const sendVal = isNaN(raw) ? 0 : raw * factor;
+        await sendCommand(n, sendVal);
       }
     }
 

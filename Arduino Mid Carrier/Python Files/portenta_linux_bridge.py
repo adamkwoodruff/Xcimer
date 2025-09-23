@@ -354,6 +354,9 @@ POLY_KEYS = {
     "a2", "b2", "c2", "d2",
 }
 
+# UDP-facing duration signals are expressed in milliseconds
+TIME_MS_SIGNALS = {"t1", "th", "t2"}
+
 CALIBRATION_KEYS = [
     "curr_scale",
     "curr_offset",
@@ -913,8 +916,12 @@ def broadcast_binary_value(name: str, value, target_addr=None):
         if name == "SW_GET_VERSION":
             # Version is transmitted as a raw 32-bit integer rather than a float.
             value_bytes = struct.pack('>I', int(value) & 0xFFFFFFFF)
+            send_value = int(value)
         else:
-            value_bytes = struct.pack('>f', float(value))
+            send_value = float(value)
+            if name in TIME_MS_SIGNALS:
+                send_value *= 1000.0
+            value_bytes = struct.pack('>f', send_value)
         payload = uid + bytes([entry.id, sig_type]) + value_bytes
         sign = hashlib.sha256(payload + DEFAULT_SIGN_KEY).digest()[-4:]
         packet = payload + sign
@@ -935,9 +942,9 @@ def broadcast_binary_value(name: str, value, target_addr=None):
 
     # print(f"[UDP] ACK packet prepared for {name}: {decoded_view}")
 
-    if name != "SW_GET_VERSION" and abs(decoded_view["value"] - float(value)) > 1e-6:
+    if name != "SW_GET_VERSION" and abs(decoded_view["value"] - float(send_value)) > 1e-6:
         print(
-            f"[UDP] WARNING: Value mismatch encoding {name}: {value} != {decoded_view['value']}"
+            f"[UDP] WARNING: Value mismatch encoding {name}: {send_value} != {decoded_view['value']}"
         )
 
     try:
@@ -954,7 +961,10 @@ def broadcast_binary_value(name: str, value, target_addr=None):
 
 
 def encode_udp_packet(uid: bytes, sig_id: int, name: str, sig_type: int, value: float) -> bytes:
-    value_bytes = struct.pack('>f', float(value))
+    send_value = float(value)
+    if name in TIME_MS_SIGNALS:
+        send_value *= 1000.0
+    value_bytes = struct.pack('>f', send_value)
     payload = uid + bytes([sig_id, sig_type]) + value_bytes
     sign = hashlib.sha256(payload + DEFAULT_SIGN_KEY).digest()[-4:]
     return payload + sign
@@ -1059,9 +1069,12 @@ def handle_udp_packet(data: bytes, addr) -> None:
         return
 
     name = info.name
-    value = struct.unpack('>f', value_bytes)[0]
+    raw_value = struct.unpack('>f', value_bytes)[0]
 
-    print(f"[UDP] RX cmd 0x{sig_type:02X} for {name} → {value} from {addr}")
+    if name in TIME_MS_SIGNALS and sig_type in (SIG_TYPE_SET, SIG_TYPE_ADD):
+        print(f"[UDP] RX cmd 0x{sig_type:02X} for {name} → {raw_value} ms from {addr}")
+    else:
+        print(f"[UDP] RX cmd 0x{sig_type:02X} for {name} → {raw_value} from {addr}")
 
     if CURRENT_MODE == "local" and sig_type in (SIG_TYPE_SET, SIG_TYPE_ADD, SIG_TYPE_MULT) and name != "mode_set":
         ack = encode_ack_reply(data, ACK_ERROR_NOTALLOWED)
@@ -1072,6 +1085,11 @@ def handle_udp_packet(data: bytes, addr) -> None:
     if sig_type in (SIG_TYPE_SET, SIG_TYPE_ADD, SIG_TYPE_MULT):
         with DATA_LOCK:
             current = get_signal_value(name)
+
+            if name in TIME_MS_SIGNALS and sig_type in (SIG_TYPE_SET, SIG_TYPE_ADD):
+                value = raw_value * 0.001
+            else:
+                value = raw_value
 
             if sig_type == SIG_TYPE_SET:
                 # Preserve legacy behaviour where boolean values toggle when a SET
@@ -1091,6 +1109,8 @@ def handle_udp_packet(data: bytes, addr) -> None:
     elif sig_type == SIG_TYPE_GET:
         with DATA_LOCK:
             current_val = get_signal_value(name)
+        if name in TIME_MS_SIGNALS and current_val is not None:
+            current_val = float(current_val) * 1000.0
         ack = encode_ack_reply(data, ACK_OK, current_val)
         udp_sock.sendto(ack, addr)
 
