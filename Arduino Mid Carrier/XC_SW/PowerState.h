@@ -8,6 +8,7 @@ struct PowerState {
     static volatile float setCurrent;
     static volatile float probeVoltageOutput;
     static volatile float probeCurrent;
+    static volatile float internalTemperature;
 
     // Enable logic
     static volatile bool internalEnable;   // Set via UI or logic

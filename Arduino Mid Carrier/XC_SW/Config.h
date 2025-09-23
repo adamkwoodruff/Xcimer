@@ -6,6 +6,7 @@
 
 #define APIN_VOLTAGE_PROBE   PF_11  // Analog input for voltage sensing
 #define APIN_CURRENT_PROBE   PA_6  // Analog input for current sensing
+#define APIN_INTERNAL_TEMP   PF_13  // Analog input for internal temperature sensing
 #define DPIN_WARN_LAMP_OUT   PF_8   // Digital output for warning lamp control
 // Gate driver fault input and reset output
 #define DPIN_GATE_FAULT      PE_10   // Active-low fault feedback

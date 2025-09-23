@@ -2,6 +2,7 @@
 #include "Config.h"
 #include "Voltage.h"
 #include "Current.h"
+#include "Temperature.h"
 #include "EnableControl.h"
 #include "SerialComms.h"
 #include "IGBT.h"
@@ -38,6 +39,9 @@ void setup() {
 
   init_current();
   //Serial.println("Current OK");
+
+  init_temperature();
+  //Serial.println("Temperature OK");
 
   init_enable_control();  
   //Serial.println("Enable Control OK");
@@ -95,9 +99,10 @@ void loop() {
   float dt = (now_us - last_us) * 1e-6f;
   last_us = now_us;
 
-  update_curr_waveform(dt); 
+  update_curr_waveform(dt);
   update_voltage();
   update_current();
+  update_temperature();
   update_enable_inputs();
   update_enable_outputs();
   update_igbt();

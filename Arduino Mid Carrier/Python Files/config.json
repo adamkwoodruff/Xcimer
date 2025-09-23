@@ -274,6 +274,12 @@
             "text": "Output Enable:",
             "visible": true,
             "color": "white"
+          },
+          {
+            "id": 5,
+            "text": "Internal Temp (°C):",
+            "visible": true,
+            "color": "white"
           }
         ],
         "values": [
@@ -330,6 +336,18 @@
             "min_val": 0,
             "upper_green_val": 1,
             "lower_red_val": -1,
+            "default_color": "blue",
+            "default_value": 0
+          },
+          {
+            "id": 5,
+            "name": "internal_temperature",
+            "type": "float",
+            "display_format": "%.2f",
+            "max_val": 150,
+            "min_val": -50,
+            "upper_green_val": 80,
+            "lower_red_val": -50,
             "default_color": "blue",
             "default_value": 0
           }
@@ -782,7 +800,7 @@
       }
     },
     {
-      "poll_rpc_func": "curr_act", 
+      "poll_rpc_func": "curr_act",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
@@ -794,7 +812,19 @@
       }
     },
     {
-      "poll_rpc_func": "curr_set", 
+      "poll_rpc_func": "internal_temperature",
+      "poll_interval_s": 0.5,
+      "giga_json_template": {
+        "display_event": {
+          "type": "set_value",
+          "name": "internal_temperature",
+          "value": "{rpc_result}",
+          "src": "uc"
+        }
+      }
+    },
+    {
+      "poll_rpc_func": "curr_set",
       "poll_interval_s": 0.5,
       "giga_json_template": {
         "display_event": {
@@ -1050,6 +1080,7 @@
     "true_values": {
       "SW_GET_VERSION": 0,
       "volt_set": 0, "curr_set": 0, "volt_act": 0, "curr_act": 0,
+      "internal_temperature": 0,
       "inter_enable": 0, "extern_enable": 1, "output_enable": 0,
       "warn_lamp": 0, "dump_relay": 0, "dump_fan": 1, "charger_relay": 0,
       "mode_set": 0, "scr_trig": 0, "scr_inhib": 0, "igbt_fault": 0,
@@ -1070,7 +1101,7 @@
       "output_enable": "0x0F",
       "scr_trig": "0x10", "scr_inhib": "0x11", "igbt_fault": "0x12",
       "t1": "0x13", "th": "0x14", "t2": "0x15", "a1": "0x16", "b1": "0x17",
-      "c1": "0x18", "d1": "0x19", "a2": "0x20", "b2": "0x21", "c2": "0x23", "d2": "0x24", "run_current_wave": "0x25",
+      "c1": "0x18", "d1": "0x19", "a2": "0x20", "b2": "0x21", "c2": "0x23", "d2": "0x24", "run_current_wave": "0x25", "internal_temperature": "0x26",
       "curr_scale": "0x30", "curr_offset": "0x31", "volt_scale": "0x32", "volt_offset": "0x33",
       "volt_pwm_full_scale": "0x34", "min_load_res_ohm": "0x35",
       "igbt_min_duty_pct": "0x36", "igbt_max_duty_pct": "0x37",
@@ -1095,6 +1126,7 @@
       "b2": ["float", "int"],
       "c2": ["float", "int"],
       "d2": ["float", "int"],
+      "internal_temperature": ["float", "int"],
       "th": ["float", "int"],
       "curr_scale": ["float", "int"],
       "curr_offset": ["float", "int"],

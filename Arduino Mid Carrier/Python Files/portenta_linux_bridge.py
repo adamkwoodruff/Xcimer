@@ -249,6 +249,13 @@ def poll_m4_signals():
         inter_val = get_signal_value("inter_enable")
         out = 1 if inter_val and ext_en else 0
         update_and_broadcast("output_enable", out, src="logic")
+
+        temp = call_m4_rpc("internal_temperature", retries=0, timeout=0.2)
+        if temp is not None:
+            try:
+                update_and_broadcast("internal_temperature", float(temp), src="rpc")
+            except (TypeError, ValueError):
+                print(f"[RPC] Received non-numeric internal_temperature value: {temp}")
  
         
 
