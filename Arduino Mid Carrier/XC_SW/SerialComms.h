@@ -35,6 +35,7 @@ int get_scr_inhib_state();
 int get_igbt_fault_state();
 float get_volt_act();
 float get_curr_act();
+float get_internal_temperature();
 float get_analog_reading();
 uint64_t get_poll_data();
 

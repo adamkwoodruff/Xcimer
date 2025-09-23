@@ -4,6 +4,7 @@ volatile float PowerState::setVoltage = 0.0f;
 volatile float PowerState::setCurrent = 0.0f;
 volatile float PowerState::probeVoltageOutput = 0.0f;
 volatile float PowerState::probeCurrent = 0.0f;
+volatile float PowerState::internalTemperature = 0.0f;
 
 volatile bool PowerState::internalEnable = false;
 volatile bool PowerState::externalEnable = false;

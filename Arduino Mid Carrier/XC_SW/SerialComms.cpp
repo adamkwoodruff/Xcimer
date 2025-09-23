@@ -9,6 +9,7 @@
 #include "Voltage.h"
 #include "Current.h"
 #include "EnableControl.h"
+#include "Temperature.h"
 #include "Config.h"
 #include "PowerState.h" 
 #include "SerialRPC.h" 
@@ -40,6 +41,7 @@ void init_serial_comms() {
   RPC.bind("volt_set", get_volt_set);
   RPC.bind("curr_act", get_curr_act);
   RPC.bind("curr_set", get_curr_set);
+  RPC.bind("internal_temperature", get_internal_temperature);
   RPC.bind("inter_enable", get_internal_enable_state);
   RPC.bind("extern_enable", get_external_enable_state);
   RPC.bind("warn_lamp", get_warn_lamp_test_state); 
@@ -57,6 +59,7 @@ float get_curr_set() { return PowerState::setCurrent; }
 int get_warn_lamp_test_state() { return PowerState::warnLampTestState ? 1 : 0; }
 float get_volt_act() { return PowerState::probeVoltageOutput; }
 float get_curr_act() { return PowerState::probeCurrent; }
+float get_internal_temperature() { return PowerState::internalTemperature; }
 
 int get_internal_enable_state() { return PowerState::internalEnable ? 1 : 0; }
 int get_external_enable_state() { return PowerState::externalEnable ? 1 : 0; } 
