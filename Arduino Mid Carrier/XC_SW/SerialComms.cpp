@@ -23,6 +23,10 @@ void init_serial_comms() {
   //Serial.println("→ Binding RPC functions...");
   RPC.bind("get_poll_data", []() -> uint64_t {
   return get_poll_data();
+  }); 
+
+    RPC.bind("get_poll_data_temp", []() -> uint64_t {
+  return get_poll_data_temp();
   });
 
 
@@ -182,26 +186,40 @@ int process_event_in_uc(const std::string& json_event_std)
 }
 
 
-static inline uint32_t clamp19(uint32_t x) { return (x > 409599U) ? 409599U : x; }
+static inline uint32_t clamp19(uint32_t x) { return (x > 524287U) ? 524287U : x; }
 
+static inline int32_t clamp32s(int32_t x) {
+  if (x >  2000000000) return  2000000000;
+  if (x < -2000000000) return -2000000000;
+  return x;
+}
+
+// Existing get_poll_data: KEEP FOR FLAGS ONLY
 uint64_t get_poll_data() {
-  uint32_t v100   = clamp19((uint32_t)lroundf(PowerState::probeVoltageOutput * 100.0f));
-  uint32_t c100   = clamp19((uint32_t)lroundf(PowerState::probeCurrent       * 100.0f));
   uint32_t e      = PowerState::externalEnable ? 1U : 0U;
   uint32_t igbt_f = PowerState::IgbtFaultState ? 1U : 0U;
   uint32_t ScrT   = PowerState::ScrTrig ? 1U : 0U;
   uint32_t ScrIn  = PowerState::ScrInhib ? 1U : 0U;
-  uint32_t s100   = clamp19((uint32_t)lroundf(PowerState::setCurrent         * 100.0f)); 
   uint32_t RCuWa  = PowerState::runCurrentWave ? 1U : 0U;
 
-  uint64_t word =  (uint64_t)v100
-                 | ((uint64_t)c100 << 19)
-                 | ((uint64_t)e    << 38)
-                 | ((uint64_t)igbt_f << 39)
-                 | ((uint64_t)ScrT << 40)
-                 | ((uint64_t)ScrIn << 41)
-                 | ((uint64_t)s100 << 42) 
-                 | ((uint64_t)RCuWa << 61);
+  uint64_t word = ((uint64_t)e      << 0)
+                | ((uint64_t)igbt_f << 1)
+                | ((uint64_t)ScrT   << 2)
+                | ((uint64_t)ScrIn  << 3)
+                | ((uint64_t)RCuWa  << 4);
+  return word;
+}
+
+uint64_t get_poll_data_temp() {
+  int32_t v100 = clamp32s((int32_t)lroundf(PowerState::probeVoltageOutput * 100.0f));
+  int32_t c100 = clamp32s((int32_t)lroundf(PowerState::probeCurrent * 100.0f));
+  int32_t t100 = clamp32s((int32_t)lroundf(PowerState::internalTemperature * 100.0f));
+
+  // Pack: lower 21 bits = volt, next 21 bits = curr, next 21 bits = temp
+  // That uses 63 bits total, each stored in signed 2’s complement.
+  uint64_t word = ((uint64_t)(v100 & 0x1FFFFF))        // bits [20:0]
+                | ((uint64_t)(c100 & 0x1FFFFF) << 21)  // bits [41:21]
+                | ((uint64_t)(t100 & 0x1FFFFF) << 42); // bits [62:42]
 
   return word;
 }

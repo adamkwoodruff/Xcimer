@@ -37,7 +37,8 @@ float get_volt_act();
 float get_curr_act();
 float get_internal_temperature();
 float get_analog_reading();
-uint64_t get_poll_data();
+uint64_t get_poll_data(); 
+uint64_t get_poll_data_temp();
 
 // --- Sync / truth table RPCs ---
 uint16_t get_sync_status_rpc();                       // returns M4_STATUS_* code
@@ -49,6 +50,7 @@ int get_internal_enable_state();
 int get_external_enable_state();
 
 // --- Unified JSON processor (returns int ack) ---
-int process_event_in_uc(const std::string& json_event);
+int process_event_in_uc(const std::string& json_event); 
+
 
 #endif // SERIALCOMMS_H

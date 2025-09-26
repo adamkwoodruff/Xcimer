@@ -23,10 +23,10 @@ void update_voltage() {
   // --- Read and convert ADC value ---
   int   raw_adc     = voltageReader ? voltageReader(APIN_VOLTAGE_PROBE)
                                     : analogRead(APIN_VOLTAGE_PROBE);
-  float vin         = (raw_adc / 4095.0f) * 3.3f;
+  float vin         = (raw_adc / 1023.0f) * 3.3f;
 
   // --- Apply calibration and scaling ---
-  float calcVolt    = -(vin - 1.65f) * VScale_V + VOffset_V;
+  float calcVolt    = (vin - 1.65f) * VScale_V + VOffset_V;
 
   PowerState::probeVoltageOutput = calcVolt;
 

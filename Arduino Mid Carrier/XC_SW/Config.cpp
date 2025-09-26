@@ -4,9 +4,9 @@
 // --- Define Calibration Constants ---
 //
 // initially bringing the system up.
-float VScale_V = 25.0f;
+float VScale_V = 0.0f;
 float VOffset_V = 0.0f;
-float VScale_C = 25.0f;
+float VScale_C = 0.0f;
 float VOffset_C = 0.0f;
 
 float VOLTAGE_PWM_FULL_SCALE = 400.0f; // Default full-scale voltage for measured PWM output

@@ -1,7 +1,7 @@
 #include "Current.h"
 #include "PowerState.h"
 #include "Config.h"
-#include "MeasuredPWM.h"
+
 
 static AnalogReadFunc currentReader = nullptr;
 
@@ -13,24 +13,21 @@ void init_current() {
   pinMode(APIN_CURRENT_PROBE, INPUT);
   pinMode(MEASURED_CURR_OUT, OUTPUT);
 
-#if defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_MBED)
-  measured_pwm_init();
-#elif defined(TEENSYDUINO) || defined(ARDUINO_ARCH_RP2040)
-  analogWriteFrequency(MEASURED_CURR_OUT, 10000);
-#elif defined(ARDUINO_ARCH_RENESAS)
-  setPWMFreq(MEASURED_CURR_OUT, 10000);
-#endif
-  // Keep default resolution used by analogWrite()
+  // Target 10 kHz PWM on MEASURED_VOLT_OUT, if supported
+  #if defined(TEENSYDUINO) || defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_RP2040)
+    analogWriteFrequency(MEASURED_CURR_OUT, 10000);
+  #endif
 }
 
 void update_current() {
   // ----- Read & calibrate actual current (unchanged base chain) -----
   int raw_adc   = currentReader ? currentReader(APIN_CURRENT_PROBE)
                                 : analogRead(APIN_CURRENT_PROBE);
-  float vin     = (raw_adc / 4095.0f) * 3.3f;
-  float calcCur = (vin - 1.65f);
-  calcCur       = calcCur * (VScale_C);
-  PowerState::probeCurrent = -(calcCur + VOffset_C);
+  float vin     = (raw_adc / 1023.0f) * 3.3f; 
+
+  // --- Apply calibration and scaling ---
+  float calcCurr    = (vin - 1.65f) * VScale_C + VOffset_C;
+  PowerState::probeCurrent = calcCurr;
 
   constexpr float SCR_FIRE_A = 3200.0f;
   const bool fire = (PowerState::probeCurrent > SCR_FIRE_A);
@@ -46,11 +43,8 @@ void update_current() {
   if (duty_norm < 0.0f)   duty_norm = 0.0f;
   if (duty_norm > 1.0f)   duty_norm = 1.0f;
 
-  #if defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_MBED)
-    measured_pwm_set_current_norm(duty_norm);
-  #else
     int duty8 = (int)(duty_norm * 255.0f + 0.5f);
     analogWrite(MEASURED_CURR_OUT, duty8);
-  #endif
+
 
 }
