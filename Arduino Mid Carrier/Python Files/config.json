@@ -276,6 +276,12 @@
             "color": "white"
           },
           {
+            "id": 5,
+            "text": "Internal Temperature:",
+            "visible": true,
+            "color": "white"
+          },
+          {
             "id": 13,
             "text": " °C",
             "visible": true,
@@ -340,7 +346,7 @@
             "default_value": 0
           },
           {
-            "id": 4,
+            "id": 5,
             "name": "internal_temperature",
             "type": "float",
             "display_format": "%.2f",
@@ -1085,8 +1091,8 @@
       "mode_set": 0, "scr_trig": 0, "scr_inhib": 0, "igbt_fault": 0,
       "t1": 0, "a1": 0, "b1": 0, "c1": 0, "d1": 0,
       "t2": 0, "a2": 0, "b2": 0, "c2": 0, "d2": 0, "th": 0, "run_current_wave": 0, "internal_temperature": 0,
-      "curr_scale": 25.0, "curr_offset": 0.0, "volt_scale": 25.0, "volt_offset": 0.0,
-      "volt_pwm_full_scale": 300.0, "min_load_res_ohm": 0.01,
+      "curr_scale": 2575.75, "curr_offset": 0.0, "volt_scale": 606.06, "volt_offset": 0.0,
+      "volt_pwm_full_scale": 1000.0, "min_load_res_ohm": 0.01,
       "igbt_min_duty_pct": 5.0, "igbt_max_duty_pct": 95.0,
       "current_limit_max": 3000.0, "over_voltage_limit": 285.0,
       "warn_voltage_threshold": 50.0, "warn_blink_interval_ms": 5000,
@@ -1107,7 +1113,6 @@
       "curr_act": ["float", "int"],
       "extern_enable": ["int", "bool"],
       "inter_enable": ["int", "bool"],
-      "has_sync_completed": ["int", "bool"],
       "process_event_in_uc": ["int", "none"],
       "t1": ["float", "int"],
       "a1": ["float", "int"],
@@ -1159,3 +1164,4 @@
   }
 
 }
+

@@ -219,27 +219,24 @@ def update_and_broadcast(name, value, src="linux"):
         print(f"\u2192 set [{src}] {name} = {value}")
 
 def poll_m4_signals():
-    """Poll voltage (2dp), current (2dp), enable, flags, and set-current using one 64-bit packed RPC."""
+    """
+    Poll enable flags, set-current, and run_current_wave
+    using the compact 64-bit packed RPC.
+    """
     packed = call_m4_rpc("get_poll_data", retries=0, timeout=0.5)
     if isinstance(packed, int):
-        mask19 = (1 << 19) - 1
+        ext_en    =  (packed >> 0) & 0x1
+        igbt_flt  =  (packed >> 1) & 0x1
+        scr_trg   =  (packed >> 2) & 0x1
+        scr_in    =  (packed >> 3) & 0x1
+        RCuWa     =  (packed >> 4) & 0x1
 
-        volt_x100 =  packed        & mask19          # 19 bits
-        curr_x100 = (packed >> 19) & mask19          # 19 bits
-        ext_en    = (packed >> 38) & 0x1             # 1 bit
-        igbt_flt  = (packed >> 39) & 0x1
-        scr_trg   = (packed >> 40) & 0x1
-        scr_in    = (packed >> 41) & 0x1
-        setc_x100 = (packed >> 42) & mask19 
-        RCuWa     = (packed >> 61) & 0x1   # 19 bits (new)
+        # optional: if you also left setc_x100 in this pack, decode here.
+        # Otherwise, just leave it from a float RPC.
+        # setc_x100 = (packed >> 5) & 0x7FFFF
+        # setc = setc_x100 / 100.0
+        # update_and_broadcast("curr_set", round(setc, 2), src="rpc")
 
-        volt = volt_x100 / 100.0
-        curr = curr_x100 / 100.0
-        setc = setc_x100 / 100.0
-
-        update_and_broadcast("volt_act", round(volt, 2), src="rpc")
-        update_and_broadcast("curr_act", round(curr, 2), src="rpc")
-        update_and_broadcast("curr_set", round(setc, 2), src="rpc")  # new
         update_and_broadcast("extern_enable", int(ext_en), src="rpc")
         update_and_broadcast("igbt_fault", int(igbt_flt), src="rpc")
         update_and_broadcast("scr_trig", int(scr_trg), src="rpc")
@@ -250,13 +247,36 @@ def poll_m4_signals():
         out = 1 if inter_val and ext_en else 0
         update_and_broadcast("output_enable", out, src="logic")
 
-        temp = call_m4_rpc("internal_temperature", retries=0, timeout=0.2)
-        if temp is not None:
-            try:
-                update_and_broadcast("internal_temperature", float(temp), src="rpc")
-            except (TypeError, ValueError):
-                print(f"[RPC] Received non-numeric internal_temperature value: {temp}")
- 
+
+def poll_m4_signals_temp():
+    """
+    Poll voltage, current, and internal temperature using a 64-bit packed RPC.
+    Each field is 21-bit signed two's complement, scaled ×100.
+    Layout:
+      bits [20:0]   -> volt_x100
+      bits [41:21]  -> curr_x100
+      bits [62:42]  -> temp_x100
+    """
+    word = call_m4_rpc("get_poll_data_temp", retries=0, timeout=0.5)
+    if isinstance(word, int):
+        mask21 = (1 << 21) - 1
+
+        def to_signed21(val):
+            if val & (1 << 20):   # sign bit
+                return val - (1 << 21)
+            return val
+
+        v_raw = to_signed21(word & mask21)
+        c_raw = to_signed21((word >> 21) & mask21)
+        t_raw = to_signed21((word >> 42) & mask21)
+
+        volt = v_raw / 100.0
+        curr = c_raw / 100.0
+        temp = t_raw / 100.0
+
+        update_and_broadcast("volt_act", round(volt, 2), src="rpc")
+        update_and_broadcast("curr_act", round(curr, 2), src="rpc")
+        update_and_broadcast("internal_temperature", round(temp, 2), src="rpc")
         
 
 def verify_m4_rpc_bindings():
@@ -1366,7 +1386,8 @@ if __name__ == "__main__":
                 process_giga_event(giga_event)
 
             if current_time - last_poll_time > POLL_INTERVAL:
-                poll_m4_signals()
+                poll_m4_signals() 
+                poll_m4_signals_temp()
                 last_poll_time = current_time
 
             if current_time - last_broadcast_time > BROADCAST_INTERVAL:
