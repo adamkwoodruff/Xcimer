@@ -31,7 +31,7 @@ def handle_incoming_signal(name, value):
         socketio.emit("update_value", {"name": name, "value": value})
 
 # --- NEW: Updated Network and Protocol Configuration ---
-PORTENTA_IP = "192.168.3.6"  # Portenta IP
+PORTENTA_IP = "192.168.3.55"  # Portenta IP
 PORTENTA_PORT = 17751  # The NEW fixed port for the bridge server
 
 LOCAL_PORT = 10006
@@ -58,7 +58,7 @@ SIGNAL_MAP = {
     "warn_lamp": 0x0B, "dump_relay": 0x0C, "dump_fan": 0x0D, "charger_relay": 0x0E,
     "output_enable": 0x0F, "scr_trig": 0x10, "scr_inhib": 0x11, "igbt_fault": 0x12,
     "t1": 0x13, "th": 0x14, "t2": 0x15, "a1": 0x16, "b1": 0x17,
-    "c1": 0x18, "d1": 0x19, "a2": 0x20, "b2": 0x21, "c2": 0x23, "d2": 0x24, "run_current_wave": 0x25
+    "c1": 0x18, "d1": 0x19, "a2": 0x20, "b2": 0x21, "c2": 0x22, "d2": 0x23, "run_current_wave": 0x24, "internal_temperature": 0x25
 }
 SIGNAL_ID_TO_NAME = {v: k for k, v in SIGNAL_MAP.items()}
 LATEST_VALUES = {}
