@@ -43,46 +43,21 @@
       font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
       padding: 24px;
     }
-    h1 {
-      font-size: 22px;
-      margin: 0 0 18px;
-      letter-spacing: .3px;
-    }
-    .container {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: 1.15fr 2fr;
-    }
-    @media (max-width: 980px) {
-      .container { grid-template-columns: 1fr; }
-    }
+    h1 { font-size: 22px; margin: 0 0 18px; letter-spacing: .3px; }
+    .container { display: grid; gap: 16px; grid-template-columns: 1.15fr 2fr; }
+    @media (max-width: 980px) { .container { grid-template-columns: 1fr; } }
     .card {
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
     }
-    .card .head {
-      padding: 14px 16px 0;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .card .body {
-      padding: 16px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px 12px;
-    }
+    .card .head { padding: 14px 16px 0; display: flex; align-items: center; justify-content: space-between; }
+    .card .body { padding: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; }
     .grid .span-2 { grid-column: span 2; }
-    .field {
-      display: grid;
-      gap: 6px;
-    }
-    .label {
-      font-size: 12px; color: var(--muted);
-      display: flex; align-items: center; gap: 8px;
-    }
+    .field { display: grid; gap: 6px; }
+    .label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
     .input {
       display: flex; align-items: center; gap: 8px;
       background: color-mix(in oklab, var(--panel) 92%, #000 8%);
@@ -96,7 +71,7 @@
       border: none; outline: none; background: transparent;
       color: var(--text); font-weight: 600;
     }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items:center; }
     .btn {
       border: 1px solid var(--border);
       background: linear-gradient(0deg, rgba(255,255,255,.04), rgba(255,255,255,0));
@@ -112,10 +87,7 @@
     .btn.run { background: linear-gradient(140deg, var(--accent-2) 0%, color-mix(in oklab, var(--accent-2) 30%, transparent) 60%); color: #0b110a; border-color: transparent; }
     .btn.ghost { background: transparent; }
     .muted { color: var(--muted); }
-    .stat {
-      display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end;
-      font-size: 13px; margin-top: 8px;
-    }
+    .stat { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; font-size: 13px; margin-top: 8px; }
     canvas {
       width: 100%; height: 340px; display: block;
       background:
@@ -124,49 +96,42 @@
       border-radius: 12px;
       border: 1px solid var(--border);
     }
-    .badgelike {
-      padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
-      border: 1px solid var(--border); color: var(--muted);
-    }
+    .badgelike { padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid var(--border); color: var(--muted); }
     .alert { color: var(--warn); font-weight: 600; }
     .ok { color: var(--accent-2); font-weight: 600; }
     .divider { height: 1px; background: var(--border); margin: 10px 0; }
+    .capnote {
+      display:none; margin-top:8px; padding:8px 10px; border-radius:10px;
+      background: rgba(255,184,107,0.12); border: 1px solid color-mix(in oklab, var(--warn) 40%, var(--border));
+      color: var(--warn); font-weight: 600;
+    }
+    .capnote.show { display:block; }
   </style>
 </head>
 <body>
   <h1>Waveform Designer</h1>
 
   <div class="container">
-    <!-- Controls -->
     <div class="card">
       <div class="head">
         <div class="row">
           <span class="badgelike">Cubic → Hold → Cubic</span>
-          <span class="muted">Design &amp; preview your current waveform</span>
-        </div>
-        <div class="row">
-          <label class="label">
-            Units:
-            <select id="units" class="input" style="padding:6px 10px;border-radius:8px;">
-              <option value="ms">milliseconds</option>
-              <option value="s">seconds</option>
-            </select>
-          </label>
+          <span class="muted">Design & preview your current waveform (milliseconds)</span>
         </div>
       </div>
       <div class="body">
         <div class="grid">
           <div class="field">
-            <span class="label">t1 (ramp up)</span>
-            <div class="input"><input id="t1" type="number" step="0.01" min="0" value="500"></div>
+            <span class="label">t1 (ramp up) — ms</span>
+            <div class="input"><input id="t1" type="number" step="1" min="0" value="500"></div>
           </div>
           <div class="field">
-            <span class="label">th (hold)</span>
-            <div class="input"><input id="th" type="number" step="0.01" min="0" value="100"></div>
+            <span class="label">th (hold) — ms</span>
+            <div class="input"><input id="th" type="number" step="1" min="0" value="100"></div>
           </div>
           <div class="field">
-            <span class="label">t2 (ramp down)</span>
-            <div class="input"><input id="t2" type="number" step="0.01" min="0" value="500"></div>
+            <span class="label">t2 (ramp down) — ms</span>
+            <div class="input"><input id="t2" type="number" step="1" min="0" value="500"></div>
           </div>
           <div></div>
 
@@ -205,13 +170,15 @@
           </div>
         </div>
 
+        <div id="capnote" class="capnote">Wave exceeded 3000 A → coefficients scaled to keep max at 3000 A.</div>
+
         <div class="divider"></div>
 
         <div class="row">
           <button class="btn" id="make-continuous" title="Match a2 to end of first segment">Make Down-Ramp Continuous</button>
           <button class="btn ghost" id="reset">Reset</button>
           <div style="flex:1"></div>
-          <button class="btn" id="send">Send Values</button>
+          <button class="btn" id="send">Send</button>
           <button class="btn run" id="run">Run</button>
           <button class="btn primary" id="sendrun">Send &amp; Run</button>
         </div>
@@ -231,16 +198,13 @@
       </div>
     </div>
 
-    <!-- Preview -->
     <div class="card">
       <div class="head">
         <div class="row">
           <span class="badgelike">Preview</span>
           <span class="muted">Piecewise current profile</span>
         </div>
-        <div class="row">
-          <span class="muted">y = current (A), x = time</span>
-        </div>
+        <div class="row"><span class="muted">y = current (A), x = time (ms)</span></div>
       </div>
       <div class="body">
         <canvas id="plot" width="1200" height="420"></canvas>
@@ -252,32 +216,73 @@
     // ---------- utilities ----------
     const $ = id => document.getElementById(id);
     const names = ["t1","th","t2","a1","b1","c1","d1","a2","b2","c2","d2"];
-    const MAX_CURRENT = 3000; // clamp like firmware
+    const MAX_CURRENT = 3000; // hard cap like firmware
 
     function readValues() {
       const vals = {};
       for (const n of names) vals[n] = parseFloat($(n).value || "0");
-      vals.units = $("units").value; // "ms" or "s"
-      return vals;
+      return vals; // times are in milliseconds
+    }
+    function writeValues(v) {
+      for (const n of names) if ($(n)) $(n).value = (Number.isFinite(v[n]) ? v[n] : 0);
     }
     function poly3(A,B,C,D,s){ return ((D*s + C)*s + B)*s + A; }
 
-    // Convert UI units to SECONDS for preview + firmware logic
-    function toSeconds(v, units) { return units === "ms" ? v * 0.001 : v; }
+    // Find the maximum of a cubic on [0,1] by dense sampling (robust & simple)
+    function maxCubicOn01(A,B,C,D) {
+      let maxv = -Infinity;
+      const N = 512;
+      for (let i=0;i<=N;i++) {
+        const s = i/N;
+        const y = poly3(A,B,C,D,s);
+        if (y > maxv) maxv = y;
+      }
+      return maxv;
+    }
+
+    // Cap both polynomials so the whole piecewise wave never exceeds MAX_CURRENT
+    // We scale ALL coefficients by a single factor to preserve shape.
+    function capPolynomialsToMax(v) {
+      // First segment peak (including hold y1(1))
+      const max1 = Math.max(
+        0,
+        maxCubicOn01(v.a1, v.b1, v.c1, v.d1),
+        poly3(v.a1, v.b1, v.c1, v.d1, 1)
+      );
+      // Second segment peak (including end value)
+      const max2 = Math.max(
+        0,
+        maxCubicOn01(v.a2, v.b2, v.c2, v.d2),
+        poly3(v.a2, v.b2, v.c2, v.d2, 1)
+      );
+      const globalMax = Math.max(max1, max2);
+
+      if (!Number.isFinite(globalMax) || globalMax <= MAX_CURRENT || globalMax <= 0) {
+        return 1.0; // no scaling needed
+      }
+
+      const k = MAX_CURRENT / globalMax;
+
+      // scale all cubic coefficients
+      v.a1 *= k; v.b1 *= k; v.c1 *= k; v.d1 *= k;
+      v.a2 *= k; v.b2 *= k; v.c2 *= k; v.d2 *= k;
+
+      writeValues(v);
+      return k;
+    }
 
     // Sample the waveform for preview
     function sampleWave() {
-      const v = readValues();
-      const t1 = toSeconds(v.t1, v.units);
-      const th = toSeconds(v.th, v.units);
-      const t2 = toSeconds(v.t2, v.units);
-      const t2Start = t1 + th;
-      const tEnd = t1 + th + t2;
+      const v = readValues(); // Times are in ms
+      const t1_s = Math.max(0, v.t1) / 1000;
+      const th_s = Math.max(0, v.th) / 1000;
+      const t2_s = Math.max(0, v.t2) / 1000;
+      const t2Start_s = t1_s + th_s;
+      const tEnd_s = t1_s + th_s + t2_s;
 
-      // sample density ~ 600 pts total
       const pts = [];
       const N = 600;
-      if (tEnd <= 0) return {pts:[], tEnd:0, yMin:0, yMax:0, yJoin1:0, yJoin2:0};
+      if (tEnd_s <= 0) return {pts:[], tEnd:0, yMin:0, yMax:0, yJoin1:0, yJoin2:0};
 
       let yMin = Infinity, yMax = -Infinity;
       const yHold = poly3(v.a1, v.b1, v.c1, v.d1, 1);
@@ -285,26 +290,26 @@
       const yJoin2 = poly3(v.a2, v.b2, v.c2, v.d2, 0);
 
       for (let i = 0; i <= N; i++) {
-        const t = tEnd * (i / N);
+        const t_s = tEnd_s * (i / N);
         let y;
-        if (t1 > 0 && t < t1) {
-          const s = t / t1;
+        if (t1_s > 0 && t_s < t1_s) {
+          const s = t_s / t1_s;
           y = poly3(v.a1, v.b1, v.c1, v.d1, s);
-        } else if (t < t2Start) {
+        } else if (t_s < t2Start_s) {
           y = yHold;
-        } else if (t2 > 0 && t < tEnd) {
-          const s = (t - t2Start) / t2;
+        } else if (t2_s > 0 && t_s < tEnd_s) {
+          const s = (t_s - t2Start_s) / t2_s;
           y = poly3(v.a2, v.b2, v.c2, v.d2, s);
         } else {
           y = poly3(v.a2, v.b2, v.c2, v.d2, 1);
         }
-        if (y < 0) y = 0;                 // clamp like FW
-        if (y > MAX_CURRENT) y = MAX_CURRENT;
+        if (y < 0) y = 0; // no negative current
+        if (y > MAX_CURRENT) y = MAX_CURRENT; // hard cap in preview
         yMin = Math.min(yMin, y);
         yMax = Math.max(yMax, y);
-        pts.push({t,y});
+        pts.push({t: t_s, y: y});
       }
-      return {pts, tEnd, yMin, yMax, yJoin1, yJoin2};
+      return {pts, tEnd: tEnd_s, yMin, yMax, yJoin1, yJoin2};
     }
 
     // Draw axes + line on canvas
@@ -314,35 +319,24 @@
       const ctx = c.getContext("2d");
       ctx.clearRect(0,0,c.width,c.height);
 
-      // padding for axes
       const padL = 55, padR = 16, padT = 12, padB = 36;
       const W = c.width - padL - padR;
       const H = c.height - padT - padB;
 
-      // nice ranges
       const yPad = Math.max(2, (yMax - yMin) * 0.1);
-      const y0 = Math.max(0, Math.floor((yMin - yPad)));
-      const y1 = Math.min(MAX_CURRENT, Math.ceil((yMax + yPad)));
-      const x0 = 0, x1 = Math.max(1e-6, tEnd);
+      const y0 = 0; // anchor at zero for clarity
+      const y1 = Math.max(10, Math.min(MAX_CURRENT, Math.ceil((yMax + yPad))));
+      const x0_s = 0, x1_s = Math.max(1e-6, tEnd);
 
-      // helpers
-      const xpix = t => padL + (t - x0) / (x1 - x0) * W;
+      const xpix = t_s => padL + (t_s - x0_s) / (x1_s - x0_s) * W;
       const ypix = y => padT + (1 - (y - y0) / (y1 - y0)) * H;
 
       // grid
       ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border');
       ctx.lineWidth = 1;
       ctx.beginPath();
-      // vertical grid (5)
-      for (let i=0; i<=5; i++){
-        const x = padL + (W * i/5);
-        ctx.moveTo(x, padT); ctx.lineTo(x, padT+H);
-      }
-      // horizontal grid (5)
-      for (let i=0; i<=5; i++){
-        const y = padT + (H * i/5);
-        ctx.moveTo(padL, y); ctx.lineTo(padL+W, y);
-      }
+      for (let i=0; i<=5; i++){ const x = padL + (W * i/5); ctx.moveTo(x, padT); ctx.lineTo(x, padT+H); }
+      for (let i=0; i<=5; i++){ const y = padT + (H * i/5); ctx.moveTo(padL, y); ctx.lineTo(padL+W, y); }
       ctx.stroke();
 
       // axes labels
@@ -350,8 +344,8 @@
       ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Inter";
       ctx.textAlign = "center";
       for (let i=0; i<=5; i++){
-        const t = x0 + (x1 - x0) * i/5;
-        ctx.fillText(t.toFixed(2), padL + (W*i/5), padT+H+22);
+        const t_ms = (x0_s + (x1_s - x0_s) * i/5) * 1000;
+        ctx.fillText(t_ms.toFixed(0), padL + (W*i/5), padT+H+22);
       }
       ctx.textAlign = "right";
       for (let i=0; i<=5; i++){
@@ -359,17 +353,16 @@
         ctx.fillText(y.toFixed(0), padL-8, padT + (H*(1-i/5)) + 4);
       }
 
-      // piecewise shading (optional)
+      // piecewise shading
       const v = readValues();
-      const t1s = toSeconds(v.t1, v.units);
-      const ths = toSeconds(v.th, v.units);
-      const t2s = toSeconds(v.t2, v.units);
+      const t1s = Math.max(0, v.t1) / 1000;
+      const ths = Math.max(0, v.th) / 1000;
       ctx.fillStyle = "rgba(110,168,254,0.06)";
       ctx.fillRect(xpix(0), padT, xpix(t1s)-xpix(0), H);
       ctx.fillStyle = "rgba(158,240,165,0.06)";
       ctx.fillRect(xpix(t1s), padT, xpix(t1s+ths)-xpix(t1s), H);
       ctx.fillStyle = "rgba(255,184,107,0.06)";
-      ctx.fillRect(xpix(t1s+ths), padT, xpix(t1s+ths+t2s)-xpix(t1s+ths), H);
+      ctx.fillRect(xpix(t1s+ths), padT, xpix(x1_s)-xpix(t1s+ths), H);
 
       // waveform
       if (pts.length > 0) {
@@ -381,13 +374,13 @@
         ctx.stroke();
       }
 
-      // join discontinuity indicator
+      // join continuity indicator
       const cont = Math.abs(yJoin1 - yJoin2) < 1e-6;
       $("contStatus").textContent = cont ? "Continuous ✓" : `Jump = ${(yJoin2 - yJoin1).toFixed(3)} A`;
       $("contStatus").className = cont ? "ok" : "alert";
 
       // stats
-      $("tTotal").textContent = x1.toFixed(3) + " s";
+      $("tTotal").textContent = (x1_s * 1000).toFixed(0) + " ms";
       $("yMinMax").textContent = `${yMin.toFixed(3)} A … ${yMax.toFixed(3)} A`;
     }
 
@@ -399,37 +392,52 @@
         body:JSON.stringify({name, value})
       });
     }
-    async function sendAllValues() {
-      const units = $("units").value;
-      const factor = units === "ms" ? 1 : 1000;
+
+    function showCapNote(show) {
+      const n = $("capnote");
+      n.className = show ? "capnote show" : "capnote";
+    }
+
+    async function sendAllValues(withCap=true) {
+      const v = readValues();
+
+      // Auto-cap coefficients to keep waveform ≤ 3000 A
+      if (withCap) {
+        const scaled = capPolynomialsToMax(v);
+        showCapNote(scaled !== 1.0);
+      } else {
+        showCapNote(false);
+      }
+
+      // Push values, converting time units from ms to seconds for the firmware
       for (const n of names) {
-        const raw = parseFloat($(n).value || '0');
-        const sendVal = isNaN(raw) ? 0 : raw * factor;
-        await sendCommand(n, sendVal);
+        let val = parseFloat($(n).value || '0');
+        if (n === 't1' || n === 'th' || n === 't2') {
+            val /= 1000;
+        }
+        await sendCommand(n, val);
       }
     }
 
     // Buttons
     $("send").addEventListener("click", async () => {
-      await sendAllValues();
+      await sendAllValues(true);
     });
     $("run").addEventListener("click", async () => {
-      // trigger run (bool → 1)
       await sendCommand('run_current_wave', 1);
     });
     $("sendrun").addEventListener("click", async () => {
-      await sendAllValues();
+      await sendAllValues(true);
       await sendCommand('run_current_wave', 1);
     });
     $("reset").addEventListener("click", () => {
-      // simple defaults
-      $("t1").value = 500; $("th").value = 100; $("t2").value = 500; $("units").value = "ms";
+      $("t1").value = 500; $("th").value = 100; $("t2").value = 500;
       $("a1").value = 0; $("b1").value = 6; $("c1").value = 0; $("d1").value = 0;
       $("a2").value = 3000; $("b2").value = -6; $("c2").value = 0; $("d2").value = 0;
+      showCapNote(false);
       drawPreview();
     });
     $("make-continuous").addEventListener("click", () => {
-      // force continuity at the join: a2 := poly1(1)
       const a1 = parseFloat($("a1").value||"0");
       const b1 = parseFloat($("b1").value||"0");
       const c1 = parseFloat($("c1").value||"0");
@@ -440,7 +448,7 @@
     });
 
     // Live update preview
-    for (const n of [...names, "units"]) {
+    for (const n of names) {
       $(n).addEventListener("input", drawPreview);
       $(n).addEventListener("change", drawPreview);
     }
