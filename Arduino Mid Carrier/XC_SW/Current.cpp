@@ -1,6 +1,13 @@
 #include "Current.h"
 #include "PowerState.h"
 #include "Config.h"
+#include <Arduino.h>
+#include "stm32h7xx_hal.h"
+
+// Shared PWM controls provided in Voltage.cpp
+extern bool ensure_measured_pwm_timer();
+extern bool measured_pwm_ready();
+extern void measured_pwm_set_duty(uint32_t channel, float duty_norm);
 
 
 static AnalogReadFunc currentReader = nullptr;
@@ -18,10 +25,7 @@ void init_current() {
   pinMode(APIN_CURRENT_PROBE, INPUT);
   pinMode(MEASURED_CURR_OUT, OUTPUT);
 
-  // Target 10 kHz PWM on MEASURED_VOLT_OUT, if supported
-  #if defined(TEENSYDUINO) || defined(ARDUINO_ARCH_STM32) || defined(ARDUINO_ARCH_RP2040)
-    analogWriteFrequency(MEASURED_CURR_OUT, 10000);
-  #endif
+  ensure_measured_pwm_timer();
 }
 
 void update_current() {
@@ -54,6 +58,12 @@ void update_current() {
   if (duty_norm < 0.0f)   duty_norm = 0.0f;
   if (duty_norm > 1.0f)   duty_norm = 1.0f;
 
-  int duty8 = (int)(duty_norm * 255.0f + 0.5f);
-  analogWrite(MEASURED_CURR_OUT, duty8);
+  if (!measured_pwm_ready()) {
+    if (!ensure_measured_pwm_timer()) {
+      return;
+    }
+  }
+
+  measured_pwm_set_duty(TIM_CHANNEL_3, duty_norm);
 }
+
