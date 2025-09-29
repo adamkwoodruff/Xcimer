@@ -393,7 +393,7 @@ def api_upload_config():
 @app.route("/waveform")
 def waveform_page():
     """Simple page for editing waveform parameters."""
-    return render_template("waveform.html")
+    return render_template("waveform.html", devices=DEVICES)
 
 
 

@@ -1,4 +1,4 @@
-const socket = io("http://0.0.0.0:8009", {
+const socket = io("ttp://0.0.0.0:8009", {
   transports: ["websocket", "polling"]
 });
 
@@ -11,6 +11,10 @@ const allDeviceIds = Object.keys(deviceInfo);
 const selectedDevices = new Set();
 const deviceValues = {};
 const deviceModes = {};
+
+const deviceStatus = {};
+const DEVICE_OFFLINE_TIMEOUT_MS = 8000;
+
 let trackedSignals = [];
 const signalDisplayMap = {};
 const valueDefinitions = {};
@@ -39,6 +43,115 @@ function getSelectedDeviceOrder() {
   return Array.from(selectedDevices).sort((a, b) => getDeviceLabel(a).localeCompare(getDeviceLabel(b)));
 }
 
+
+function getDeviceStatus(deviceId) {
+  if (!deviceStatus[deviceId]) {
+    deviceStatus[deviceId] = { online: false, lastSeen: 0 };
+  }
+  return deviceStatus[deviceId];
+}
+
+function getModeLabel(deviceId) {
+  const status = getDeviceStatus(deviceId);
+  if (!status.online) return "--";
+  const modeValue = parseFloat(deviceModes[deviceId]);
+  if (Number.isNaN(modeValue)) return "Pending";
+  return modeValue >= 0.5 ? "Remote" : "Local";
+}
+
+function getStatusText(deviceId) {
+  const status = getDeviceStatus(deviceId);
+  return status.online ? "Online" : "Offline";
+}
+
+function updateDeviceRowState(deviceId) {
+  const status = getDeviceStatus(deviceId);
+  const table = document.getElementById("device-values-table");
+  if (!table) return;
+  const row = table.querySelector(`tr[data-device-row="${deviceId}"]`);
+  if (!row) return;
+  row.classList.toggle("offline", !status.online);
+  const statusCell = row.querySelector(`td[data-status-for="${deviceId}"]`);
+  if (statusCell) {
+    statusCell.textContent = getStatusText(deviceId);
+  }
+  const modeCell = row.querySelector(`td[data-mode-for="${deviceId}"]`);
+  if (modeCell) {
+    modeCell.textContent = getModeLabel(deviceId);
+  }
+}
+
+function updateAllDeviceRowStates() {
+  allDeviceIds.forEach(updateDeviceRowState);
+}
+
+function updateDeviceRowInfo(deviceId) {
+  const table = document.getElementById("device-values-table");
+  if (!table) return;
+  const labelCell = table.querySelector(`td[data-label-for="${deviceId}"]`);
+  if (labelCell) {
+    labelCell.textContent = getDeviceLabel(deviceId);
+  }
+  const ipCell = table.querySelector(`td[data-ip-for="${deviceId}"]`);
+  if (ipCell) {
+    const info = deviceInfo[deviceId];
+    ipCell.textContent = info?.ip || "--";
+  }
+}
+
+function updateDeviceCardStatus(deviceId) {
+  const status = getDeviceStatus(deviceId);
+  const indicator = document.querySelector(`.status-indicator[data-status-indicator="${deviceId}"]`);
+  const statusText = document.querySelector(`.status-text[data-status-text="${deviceId}"]`);
+  const modeText = document.querySelector(`.status-mode[data-status-mode="${deviceId}"]`);
+
+  if (indicator) {
+    indicator.classList.toggle("online", status.online);
+    indicator.classList.toggle("offline", !status.online);
+  }
+
+  if (statusText) {
+    statusText.textContent = getStatusText(deviceId);
+  }
+
+  if (modeText) {
+    modeText.textContent = `Mode: ${getModeLabel(deviceId)}`;
+  }
+}
+
+function setDeviceOnline(deviceId) {
+  const status = getDeviceStatus(deviceId);
+  status.online = true;
+  status.lastSeen = Date.now();
+  updateDeviceCardStatus(deviceId);
+  updateDeviceRowState(deviceId);
+  updateModeIndicator();
+  updateCommandButtonStates();
+}
+
+function setDeviceOffline(deviceId) {
+  const status = getDeviceStatus(deviceId);
+  if (!status.online) return;
+  status.online = false;
+  status.lastSeen = Date.now();
+  updateDeviceCardStatus(deviceId);
+  updateDeviceRowState(deviceId);
+  updateModeIndicator();
+  updateCommandButtonStates();
+}
+
+function checkDeviceTimeouts() {
+  const now = Date.now();
+  allDeviceIds.forEach((deviceId) => {
+    const status = getDeviceStatus(deviceId);
+    if (!status.online) return;
+    if (now - status.lastSeen > DEVICE_OFFLINE_TIMEOUT_MS) {
+      setDeviceOffline(deviceId);
+    }
+  });
+}
+
+
 function updateModeIndicator() {
   const indicator = document.getElementById("mode-indicator");
   const header = document.querySelector("header");
@@ -46,19 +159,29 @@ function updateModeIndicator() {
 
   if (selectedDevices.size === 0) {
     indicator.textContent = "Mode: Select target(s)";
+
     indicator.classList.remove("remote", "local");
     header.classList.remove("mode-remote", "mode-local");
     return;
   }
 
+
   const selectedOrder = getSelectedDeviceOrder();
   const remoteDevices = [];
   const localDevices = [];
   const pendingDevices = [];
+  const offlineDevices = [];
 
   selectedOrder.forEach((deviceId) => {
-    const modeValue = parseFloat(deviceModes[deviceId]);
     const label = getDeviceLabel(deviceId);
+    const status = getDeviceStatus(deviceId);
+
+    if (!status.online) {
+      offlineDevices.push(label);
+      return;
+    }
+
+    const modeValue = parseFloat(deviceModes[deviceId]);
 
     if (Number.isNaN(modeValue)) {
       pendingDevices.push(label);
@@ -73,6 +196,7 @@ function updateModeIndicator() {
   if (remoteDevices.length) segments.push(`Remote: ${remoteDevices.join(", ")}`);
   if (localDevices.length) segments.push(`Local: ${localDevices.join(", ")}`);
   if (pendingDevices.length) segments.push(`Pending: ${pendingDevices.join(", ")}`);
+  if (offlineDevices.length) segments.push(`Offline: ${offlineDevices.join(", ")}`);
 
   if (!segments.length) {
     indicator.textContent = "Mode: Awaiting data...";
@@ -106,9 +230,12 @@ function updateCommandButtonStates() {
   const hasSelection = selectedDevices.size > 0;
   const selectedOrder = getSelectedDeviceOrder();
   const allRemote = hasSelection && selectedOrder.every((deviceId) => {
+    const status = getDeviceStatus(deviceId);
+    if (!status.online) return false;
     const modeValue = parseFloat(deviceModes[deviceId]);
     return !Number.isNaN(modeValue) && modeValue >= 0.5;
   });
+
 
   buttons.forEach((btn) => {
     const name = btn.dataset.name;
@@ -157,6 +284,7 @@ function formatValueWithFormat(value, fmt) {
   if (formatStr.includes("%08X")) {
     const intVal = Math.floor(numericValue);
     return "0x" + intVal.toString(16).toUpperCase().padStart(8, "0");
+
   }
 
   return Number(numericValue).toFixed(2);
@@ -173,6 +301,7 @@ function updateSpanDisplay(span, value) {
   if (span.textContent !== formattedText) {
     span.textContent = formattedText;
   }
+
 
   const numericValue = typeof value === "number" ? value : parseFloat(value);
   const upperLimit = parseFloat(span.dataset.upperOverrideVal);
@@ -237,34 +366,22 @@ function renderDeviceTable() {
 
   table.innerHTML = "";
 
-  if (!trackedSignals.length) {
-    emptyMessage.textContent = "Waiting for display configuration...";
-    emptyMessage.style.display = "block";
-    return;
-  }
 
-  const selectedOrder = getSelectedDeviceOrder();
-  if (!selectedOrder.length) {
-    emptyMessage.textContent = "Select at least one device to view live signal values.";
-    emptyMessage.style.display = "block";
-    return;
-  }
-
-  emptyMessage.style.display = "none";
+  const hasSignals = trackedSignals.length > 0;
+  emptyMessage.style.display = hasSignals ? "none" : "block";
 
   const thead = document.createElement("thead");
   const headerRow = document.createElement("tr");
-  const signalHeader = document.createElement("th");
-  signalHeader.textContent = "Signal";
-  headerRow.appendChild(signalHeader);
-
-  selectedOrder.forEach((deviceId) => {
+  ["Device", "IP", "Status", "Mode"].forEach((heading) => {
     const th = document.createElement("th");
-    const info = deviceInfo[deviceId];
-    th.textContent = info ? info.label : deviceId;
-    if (info && info.ip) {
-      th.title = info.ip;
-    }
+    th.textContent = heading;
+    headerRow.appendChild(th);
+  });
+
+  trackedSignals.forEach((signalName) => {
+    const th = document.createElement("th");
+    th.textContent = signalDisplayMap[signalName] || signalName;
+
     headerRow.appendChild(th);
   });
 
@@ -272,13 +389,36 @@ function renderDeviceTable() {
   table.appendChild(thead);
 
   const tbody = document.createElement("tbody");
-  trackedSignals.forEach((signalName) => {
+
+  const sortedDevices = allDeviceIds.slice().sort((a, b) => getDeviceLabel(a).localeCompare(getDeviceLabel(b)));
+
+  sortedDevices.forEach((deviceId) => {
     const row = document.createElement("tr");
-    const labelCell = document.createElement("th");
-    labelCell.textContent = signalDisplayMap[signalName] || signalName;
+    row.dataset.deviceRow = deviceId;
+
+    const labelCell = document.createElement("td");
+    labelCell.dataset.labelFor = deviceId;
+    labelCell.textContent = getDeviceLabel(deviceId);
     row.appendChild(labelCell);
 
-    selectedOrder.forEach((deviceId) => {
+    const ipCell = document.createElement("td");
+    ipCell.dataset.ipFor = deviceId;
+    const info = deviceInfo[deviceId];
+    ipCell.textContent = info?.ip || "--";
+    row.appendChild(ipCell);
+
+    const statusCell = document.createElement("td");
+    statusCell.dataset.statusFor = deviceId;
+    statusCell.textContent = getStatusText(deviceId);
+    row.appendChild(statusCell);
+
+    const modeCell = document.createElement("td");
+    modeCell.dataset.modeFor = deviceId;
+    modeCell.textContent = getModeLabel(deviceId);
+    row.appendChild(modeCell);
+
+    trackedSignals.forEach((signalName) => {
+
       const cell = document.createElement("td");
       cell.dataset.device = deviceId;
       cell.dataset.signal = signalName;
@@ -291,6 +431,9 @@ function renderDeviceTable() {
   });
 
   table.appendChild(tbody);
+
+  updateAllDeviceRowStates();
+
 }
 
 function updateDeviceTableCell(deviceId, signalName) {
@@ -352,6 +495,10 @@ function initializeDeviceSelector() {
       }
     };
 
+
+    getDeviceStatus(deviceId);
+    updateDeviceCardStatus(deviceId);
+
     syncState();
 
     checkbox.addEventListener("change", () => {
@@ -362,7 +509,7 @@ function initializeDeviceSelector() {
       if (selectedDevices.size > 0) {
         clearErrorMessage();
       }
-      renderDeviceTable();
+
       refreshValueGrid();
       updateModeIndicator();
       updateCommandButtonStates();
@@ -411,22 +558,7 @@ function buildUI(displayConfig) {
       panelDiv.appendChild(buttonGrid);
     }
     if (panel.values?.length > 0) {
-      const valueGrid = document.createElement("div");
-      valueGrid.className = "value-grid";
       panel.values.forEach(val => {
-        const label = document.createElement("div");
-        label.className = "value-label";
-        label.textContent = val.name + ":";
-        const field = document.createElement("div");
-        field.className = "value-field";
-        const span = document.createElement("span");
-        span.id = "value-" + val.name;
-        span.dataset.upperOverrideVal = val.upper_override_val;
-        span.dataset.lowerOverrideVal = val.lower_override_val;
-        span.dataset.displayFormat = val.display_format;
-        field.appendChild(span);
-        valueGrid.appendChild(label);
-        valueGrid.appendChild(field);
 
         if (val.name && !seenSignals.has(val.name)) {
           seenSignals.add(val.name);
@@ -442,9 +574,12 @@ function buildUI(displayConfig) {
           };
         }
 
-        updateSpanDisplay(span, val.default_value ?? 0);
       });
-      panelDiv.appendChild(valueGrid);
+
+      const helper = document.createElement("p");
+      helper.className = "panel-helper";
+      helper.textContent = "Live readings for these signals are available in the C&I Status Overview table.";
+      panelDiv.appendChild(helper);
     }
     container.appendChild(panelDiv);
   });
@@ -473,18 +608,24 @@ function applyUpdate(data) {
       if (data.device_label) deviceInfo[device].label = data.device_label;
       if (data.ip) deviceInfo[device].ip = data.ip;
     }
+
+    updateDeviceRowInfo(device);
+    updateDeviceCardStatus(device);
+
   }
 
   if (!deviceValues[device]) {
     deviceValues[device] = {};
+
   }
 
   deviceValues[device][name] = storedValue;
 
+  setDeviceOnline(device);
+
   if (name === "mode_set") {
     deviceModes[device] = parseFloat(rawValue);
-    updateModeIndicator();
-    updateCommandButtonStates();
+    updateDeviceCardStatus(device);
   }
 
   const selectedOrder = getSelectedDeviceOrder();
@@ -496,6 +637,8 @@ function applyUpdate(data) {
   }
 
   updateDeviceTableCell(device, name);
+  updateDeviceRowState(device);
+
 }
 
 function initialFetchConfig() {
@@ -612,4 +755,7 @@ function clearErrorMessage() {
 document.addEventListener("DOMContentLoaded", () => {
   initializeDeviceSelector();
   initialFetchConfig();
+
+  setInterval(checkDeviceTimeouts, 2000);
+
 });

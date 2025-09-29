@@ -80,6 +80,7 @@
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 0.75rem; margin-bottom: 1.5rem;
     }
+    .panel-helper { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--text-muted-color); font-style: italic; }
 
     .value-grid { display: grid; grid-template-columns: 180px 1fr; gap: 1rem 1.25rem; align-items: center; }
     .value-label { text-align: right; font-weight: 500; color: var(--text-muted-color); font-size: 0.875rem; }
@@ -96,18 +97,31 @@
     .btn-command:disabled { background-color: #9ca3af; cursor: not-allowed; transform: none; }
 
     .device-selector { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-    .device-option { display: flex; align-items: center; gap: 0.65rem; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--value-bg-color); cursor: pointer; transition: border-color 0.2s ease, background 0.2s ease; }
-    .device-option.selected { border-color: var(--primary-color); background: #dbeafe; box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.2); }
-    .device-option input { width: 1.1rem; height: 1.1rem; }
+
+    .device-help { margin-top: 0; margin-bottom: 1.25rem; font-size: 0.95rem; color: var(--text-muted-color); }
+    .device-option { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--value-bg-color); cursor: pointer; transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; }
+    .device-option.selected { border-color: var(--primary-color); background: #dbeafe; box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.25); }
+    .device-option input { width: 1.1rem; height: 1.1rem; margin-top: 0.25rem; }
+    .device-card-body { display: flex; flex-direction: column; gap: 0.35rem; }
     .device-option:hover { border-color: var(--primary-color); background: #eef2ff; }
     .device-label-text { font-weight: 600; }
     .device-ip { color: var(--text-muted-color); font-size: 0.8rem; }
+    .device-status-line { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+    .status-indicator { width: 0.65rem; height: 0.65rem; border-radius: 50%; background-color: #9ca3af; box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1); }
+    .status-indicator.online { background-color: #22c55e; }
+    .status-indicator.offline { background-color: #9ca3af; }
+    .status-text { font-weight: 600; }
+    .status-mode { color: var(--text-muted-color); }
+
 
     .table-wrapper { overflow-x: auto; }
     table.device-table { width: 100%; border-collapse: collapse; }
     table.device-table thead { background: var(--value-bg-color); }
     table.device-table th, table.device-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border-color); text-align: left; }
     table.device-table tbody tr:hover { background: #f8fafc; }
+
+    table.device-table tr.offline { opacity: 0.65; }
+
     #device-table-empty { text-align: center; color: var(--text-muted-color); margin: 1rem 0 0; }
 
     .log-box { max-height: 240px; overflow-y: auto; background-color: #0f172a; color: #f1f5f9; font-family: monospace; font-size: 0.85rem; padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); }
@@ -125,13 +139,21 @@
   <main class="container">
     <div class="panel" id="device-control-panel">
       <h3>Target Portenta Boards</h3>
+
+      <p class="device-help">Checked systems receive the commands from the control panels below. Live status for every C&amp;I appears in the table that follows.</p>
       <div class="device-selector" id="device-selector">
         {% for device_id, info in devices.items() %}
-        <label class="device-option">
+        <label class="device-option" data-device-card="{{ device_id }}">
           <input type="checkbox" class="device-checkbox" data-device="{{ device_id }}">
-          <div>
+          <div class="device-card-body">
             <div class="device-label-text">{{ info.label }}</div>
             <div class="device-ip">{{ info.ip }}</div>
+            <div class="device-status-line">
+              <span class="status-indicator offline" data-status-indicator="{{ device_id }}"></span>
+              <span class="status-text" data-status-text="{{ device_id }}">Offline</span>
+              <span class="status-mode" data-status-mode="{{ device_id }}">Mode: --</span>
+            </div>
+
           </div>
         </label>
         {% endfor %}
@@ -139,11 +161,13 @@
     </div>
 
     <div class="panel" id="device-values-panel">
-      <h3>Selected Device Values</h3>
+
+      <h3>C&amp;I Status Overview</h3>
       <div class="table-wrapper">
         <table id="device-values-table" class="device-table"></table>
       </div>
-      <p id="device-table-empty">Select at least one device to view live signal values.</p>
+      <p id="device-table-empty">Waiting for display configuration...</p>
+
     </div>
 
     <div id="panels"></div>

@@ -52,6 +52,23 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
     }
+    .selector-card .body { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .device-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+      background: color-mix(in oklab, var(--panel) 94%, #000 6%);
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .15s ease, transform .1s ease;
+    }
+    .device-option input { accent-color: var(--accent); }
+    .device-option:hover { border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); transform: translateY(-1px); }
+    .device-option .device-label { font-weight: 600; }
+    .device-option .device-ip { font-size: 12px; color: var(--muted); }
+    .selector-summary { font-size: 13px; color: var(--muted); }
     .card .head { padding: 14px 16px 0; display: flex; align-items: center; justify-content: space-between; }
     .card .body { padding: 16px; }
     .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; }
@@ -110,6 +127,25 @@
 </head>
 <body>
   <h1>Waveform Designer</h1>
+
+  <div class="card selector-card">
+    <div class="head">
+      <div class="row">
+        <span class="badgelike">Targets</span>
+        <span class="muted">Select Portenta boards to receive waveform commands</span>
+      </div>
+      <div class="row selector-summary" id="deviceSummary">All devices selected</div>
+    </div>
+    <div class="body">
+      {% for device_id, info in devices.items() %}
+      <label class="device-option">
+        <input type="checkbox" class="device-checkbox" value="{{ device_id }}" data-label="{{ info.label }}" checked>
+        <span class="device-label">{{ info.label }}</span>
+        <span class="device-ip">{{ info.ip }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
 
   <div class="container">
     <div class="card">
@@ -215,6 +251,7 @@
   <script>
     // ---------- utilities ----------
     const $ = id => document.getElementById(id);
+    const deviceCheckboxes = Array.from(document.querySelectorAll('.device-checkbox'));
     const names = ["t1","th","t2","a1","b1","c1","d1","a2","b2","c2","d2"];
     const MAX_CURRENT = 3000; // hard cap like firmware
 
@@ -384,12 +421,48 @@
       $("yMinMax").textContent = `${yMin.toFixed(3)} A … ${yMax.toFixed(3)} A`;
     }
 
+    function getSelectedTargets() {
+      const checked = deviceCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+      if (!checked.length) {
+        alert('Select at least one device target.');
+        return null;
+      }
+      return checked;
+    }
+
+    function updateDeviceSummary() {
+      const summary = $('deviceSummary');
+      if (!summary) return;
+      if (!deviceCheckboxes.length) {
+        summary.textContent = 'No devices available';
+        return;
+      }
+      const checked = deviceCheckboxes.filter(cb => cb.checked);
+      if (checked.length === deviceCheckboxes.length) {
+        summary.textContent = 'All devices selected';
+        return;
+      }
+      if (!checked.length) {
+        summary.textContent = 'No devices selected';
+        return;
+      }
+      const labels = checked.map(cb => cb.dataset.label || cb.value);
+      summary.textContent = `Sending to: ${labels.join(', ')}`;
+    }
+
+    deviceCheckboxes.forEach(cb => cb.addEventListener('change', updateDeviceSummary));
+    updateDeviceSummary();
+
     // Send helpers
-    function sendCommand(name, value){
+    function sendCommand(name, value, targets){
+      const payload = { name, value };
+      if (Array.isArray(targets) && targets.length) {
+        payload.targets = targets;
+      }
       return fetch('/api/command', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name, value})
+        body:JSON.stringify(payload)
       });
     }
 
@@ -400,6 +473,8 @@
 
     async function sendAllValues(withCap=true) {
       const v = readValues();
+      const targets = getSelectedTargets();
+      if (!targets) return;
 
       // Auto-cap coefficients to keep waveform ≤ 3000 A
       if (withCap) {
@@ -415,7 +490,7 @@
         if (n === 't1' || n === 'th' || n === 't2') {
             val /= 1000;
         }
-        await sendCommand(n, val);
+        await sendCommand(n, val, targets);
       }
     }
 
@@ -424,11 +499,15 @@
       await sendAllValues(true);
     });
     $("run").addEventListener("click", async () => {
-      await sendCommand('run_current_wave', 1);
+      const targets = getSelectedTargets();
+      if (!targets) return;
+      await sendCommand('run_current_wave', 1, targets);
     });
     $("sendrun").addEventListener("click", async () => {
       await sendAllValues(true);
-      await sendCommand('run_current_wave', 1);
+      const targets = getSelectedTargets();
+      if (!targets) return;
+      await sendCommand('run_current_wave', 1, targets);
     });
     $("reset").addEventListener("click", () => {
       $("t1").value = 500; $("th").value = 100; $("t2").value = 500;
