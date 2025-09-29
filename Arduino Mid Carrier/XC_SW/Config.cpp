@@ -22,7 +22,7 @@ float OVER_VOLTAGE_LIMIT = 285.0f;  // Disable if output exceeds this
 
 
 // --- IGBT PWM configuration ---
-const float  IGBT_PWM_FREQ_HZ          = 500.0f; // Global PWM frequency (Hz)
+float  IGBT_PWM_FREQ_HZ = 500.0f;; // Global PWM frequency (Hz)
 const uint8_t IGBT_PWM_RESOLUTION_BITS = 12;      // 12-bit resolution 
 
 // Load model / IGBT guard rails

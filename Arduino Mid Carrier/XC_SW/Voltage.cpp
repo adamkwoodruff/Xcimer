@@ -3,7 +3,12 @@
 #include "Config.h" 
 #include "SerialRPC.h"
 
-static AnalogReadFunc voltageReader = nullptr;
+static AnalogReadFunc voltageReader = nullptr; 
+
+
+const float VOLTAGE_ADC_FILTER_ALPHA = 0.1f;
+
+static float voltage_filtered_raw_adc = -1.0f;
 
 void set_voltage_analog_reader(AnalogReadFunc func) {
   voltageReader = func;
@@ -19,23 +24,33 @@ void init_voltage() {
   #endif
 }
 
+
 void update_voltage() { 
-  // --- Read and convert ADC value ---
-  int   raw_adc     = voltageReader ? voltageReader(APIN_VOLTAGE_PROBE)
-                                    : analogRead(APIN_VOLTAGE_PROBE);
-  float vin         = (raw_adc / 1023.0f) * 3.3f;
+  // --- Read ADC value ---
+  int raw_adc = voltageReader ? voltageReader(APIN_VOLTAGE_PROBE)
+                              : analogRead(APIN_VOLTAGE_PROBE);
 
-  // --- Apply calibration and scaling ---
-  float calcVolt    = (vin - 1.65f) * VScale_V + VOffset_V;
+  // --- NEW: Apply Exponential Moving Average (EMA) Filter ---
+  if (voltage_filtered_raw_adc < 0.0f) {
+    // On the first run, initialize the filter with the first reading.
+    voltage_filtered_raw_adc = (float)raw_adc;
+  } else {
+    // Apply the filter to smooth out the reading.
+    voltage_filtered_raw_adc = (VOLTAGE_ADC_FILTER_ALPHA * (float)raw_adc) + (1.0f - VOLTAGE_ADC_FILTER_ALPHA) * voltage_filtered_raw_adc;
+  }
 
+  // --- Convert filtered ADC value to voltage ---
+  // CORRECTED: Use 4095.0f for the Portenta's 12-bit ADC
+  float vin = (lroundf(voltage_filtered_raw_adc) / 4095.0f) * 3.3f;
+
+  // --- Apply calibration and scaling (now on a stable value) ---
+  float calcVolt = (vin - 1.65f) * VScale_V + VOffset_V;
   PowerState::probeVoltageOutput = calcVolt;
-
-
 
   // --- Normalize and generate PWM output ---
   float scale = VOLTAGE_PWM_FULL_SCALE;
   if (scale <= 0.0f) {
-    scale = 1.0f; // prevent divide-by-zero if misconfigured
+    scale = 1.0f;
   }
 
   float norm = calcVolt / scale;

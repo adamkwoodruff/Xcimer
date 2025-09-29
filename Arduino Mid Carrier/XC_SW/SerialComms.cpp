@@ -13,10 +13,13 @@
 #include "Config.h"
 #include "PowerState.h" 
 #include "SerialRPC.h" 
-
+#include "IGBT.h"
+ 
 
 void init_serial_comms() {
-  //Serial.println("→ RPC.begin");
+  //Serial.println("→ RPC.begin"); 
+
+
   RPC.begin();  
   //Serial.println("✓ RPC.begin");
 
@@ -24,11 +27,6 @@ void init_serial_comms() {
   RPC.bind("get_poll_data", []() -> uint64_t {
   return get_poll_data();
   }); 
-
-    RPC.bind("get_poll_data_temp", []() -> uint64_t {
-  return get_poll_data_temp();
-  });
-
 
   RPC.bind("mode_set", [](int mode){
       //RPC.call("set_value", "mode_set", mode);
@@ -179,6 +177,12 @@ int process_event_in_uc(const std::string& json_event_std)
       if (value < 0.0f) value = 0.0f;
       DEBOUNCE_DELAY_US = (unsigned long)(value + 0.5f);
       return 1;
+    } 
+    else if (strcmp(name, "igbt_pwm_freq_hz") == 0) {
+      if (value <= 0.0f) value = 1.0f; // Prevent zero/negative frequency
+      IGBT_PWM_FREQ_HZ = value;
+      init_igbt(); 
+      return 1;
     }
 
 
@@ -186,40 +190,55 @@ int process_event_in_uc(const std::string& json_event_std)
 }
 
 
-static inline uint32_t clamp19(uint32_t x) { return (x > 524287U) ? 524287U : x; }
-
-static inline int32_t clamp32s(int32_t x) {
-  if (x >  2000000000) return  2000000000;
-  if (x < -2000000000) return -2000000000;
-  return x;
+static inline int32_t clamp_s(int32_t x, int32_t lo, int32_t hi) {
+  return x < lo ? lo : (x > hi ? hi : x);
+}
+static inline uint64_t mask_nbits(int32_t x, unsigned n) {
+  // x is already clamped to the signed n-bit range; mask to 2's complement n bits
+  return (uint64_t)( (uint32_t)x & ((n >= 32) ? 0xFFFFFFFFu : ((1u << n) - 1u)) );
 }
 
-// Existing get_poll_data: KEEP FOR FLAGS ONLY
+// In SerialComms.cpp
+
 uint64_t get_poll_data() {
-  uint32_t e      = PowerState::externalEnable ? 1U : 0U;
-  uint32_t igbt_f = PowerState::IgbtFaultState ? 1U : 0U;
-  uint32_t ScrT   = PowerState::ScrTrig ? 1U : 0U;
-  uint32_t ScrIn  = PowerState::ScrInhib ? 1U : 0U;
-  uint32_t RCuWa  = PowerState::runCurrentWave ? 1U : 0U;
+    // Static variable to track which packet to send next
+    static bool send_packet_zero = true;
 
-  uint64_t word = ((uint64_t)e      << 0)
-                | ((uint64_t)igbt_f << 1)
-                | ((uint64_t)ScrT   << 2)
-                | ((uint64_t)ScrIn  << 3)
-                | ((uint64_t)RCuWa  << 4);
-  return word;
-}
+    uint64_t word = 0;
 
-uint64_t get_poll_data_temp() {
-  int32_t v100 = clamp32s((int32_t)lroundf(PowerState::probeVoltageOutput * 100.0f));
-  int32_t c100 = clamp32s((int32_t)lroundf(PowerState::probeCurrent * 100.0f));
-  int32_t t100 = clamp32s((int32_t)lroundf(PowerState::internalTemperature * 100.0f));
+    // For 20-bit signed resolution: -(2^19) to (2^19 - 1)
+    const int32_t max_val = (1 << 19) - 1;
+    const int32_t min_val = -(1 << 19);
 
-  // Pack: lower 21 bits = volt, next 21 bits = curr, next 21 bits = temp
-  // That uses 63 bits total, each stored in signed 2’s complement.
-  uint64_t word = ((uint64_t)(v100 & 0x1FFFFF))        // bits [20:0]
-                | ((uint64_t)(c100 & 0x1FFFFF) << 21)  // bits [41:21]
-                | ((uint64_t)(t100 & 0x1FFFFF) << 42); // bits [62:42]
+    if (send_packet_zero) {
+        // --- PACKET 0: ID=0, Flags, Actuals ---
+        uint64_t flags =
+            ((uint64_t)(PowerState::externalEnable ? 1U : 0U) << 0) |
+            ((uint64_t)(PowerState::IgbtFaultState ? 1U : 0U) << 1) |
+            ((uint64_t)(PowerState::ScrTrig        ? 1U : 0U) << 2) |
+            ((uint64_t)(PowerState::ScrInhib       ? 1U : 0U) << 3) |
+            ((uint64_t)(PowerState::runCurrentWave ? 1U : 0U) << 4);
 
-  return word;
+        int32_t v100 = clamp_s((int32_t)lroundf(PowerState::probeVoltageOutput * 100.0f), min_val, max_val);
+        int32_t c100 = clamp_s((int32_t)lroundf(PowerState::probeCurrent       * 100.0f), min_val, max_val);
+
+        word |= (0ULL)                     << 63;  // Packet ID = 0
+        word |= (flags & 0x1FULL)          << 58;  // [62:58] Flags (5 bits)
+        word |= (mask_nbits(v100, 20))     << 38;  // [57:38] volt_act (20 bits)
+        word |= (mask_nbits(c100, 20))     << 18;  // [37:18] curr_act (20 bits)
+
+    } else {
+        // --- PACKET 1: ID=1, Setpoints, Temperature ---
+        int32_t s100 = clamp_s((int32_t)lroundf(PowerState::setCurrent          * 100.0f), min_val, max_val);
+        int32_t t100 = clamp_s((int32_t)lroundf(PowerState::internalTemperature * 100.0f), min_val, max_val);
+
+        word |= (1ULL)                     << 63;  // Packet ID = 1
+        word |= (mask_nbits(s100, 20))     << 43;  // [62:43] curr_set (20 bits)
+        word |= (mask_nbits(t100, 20))     << 23;  // [42:23] internal_temp (20 bits)
+    }
+
+    // Toggle for the next call
+    send_packet_zero = !send_packet_zero;
+
+    return word;
 }

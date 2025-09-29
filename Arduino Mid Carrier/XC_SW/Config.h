@@ -29,7 +29,7 @@
 
 
 // PWM parameters (defined in Config.cpp)
-extern const float  IGBT_PWM_FREQ_HZ;          // e.g. 85000.0
+extern float  IGBT_PWM_FREQ_HZ;        // e.g. 85000.0
 extern const uint8_t IGBT_PWM_RESOLUTION_BITS; // 12-bit 
 
 

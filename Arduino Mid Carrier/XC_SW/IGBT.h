@@ -12,6 +12,7 @@ void init_igbt();
 void update_igbt();
 
 // Read the (active-low) IGBT gate fault input
-bool igbt_fault_active();
+bool igbt_fault_active(); 
+//void update_igbt_ignore()
 
 #endif // IGBT_H

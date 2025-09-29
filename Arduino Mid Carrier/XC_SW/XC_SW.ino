@@ -99,13 +99,15 @@ void loop() {
   float dt = (now_us - last_us) * 1e-6f;
   last_us = now_us;
 
-  update_curr_waveform(dt);
+  update_enable_inputs();
   update_voltage();
   update_current();
   update_temperature();
-  update_enable_inputs();
-  update_enable_outputs();
-  update_igbt();
+  
+  update_curr_waveform(dt);
+  update_igbt(); 
+
+  update_enable_outputs(); 
   //delayMicroseconds(5);
 
   // Sync status output
