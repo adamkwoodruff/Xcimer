@@ -1,4 +1,4 @@
-const socket = io("http://0.0.0.0:8009", {
+const socket = io("ttp://0.0.0.0:8009", {
   transports: ["websocket", "polling"]
 });
 
@@ -11,8 +11,10 @@ const allDeviceIds = Object.keys(deviceInfo);
 const selectedDevices = new Set();
 const deviceValues = {};
 const deviceModes = {};
+
 const deviceStatus = {};
 const DEVICE_OFFLINE_TIMEOUT_MS = 8000;
+
 let trackedSignals = [];
 const signalDisplayMap = {};
 const valueDefinitions = {};
@@ -40,6 +42,7 @@ function getDeviceLabel(deviceId) {
 function getSelectedDeviceOrder() {
   return Array.from(selectedDevices).sort((a, b) => getDeviceLabel(a).localeCompare(getDeviceLabel(b)));
 }
+
 
 function getDeviceStatus(deviceId) {
   if (!deviceStatus[deviceId]) {
@@ -148,6 +151,7 @@ function checkDeviceTimeouts() {
   });
 }
 
+
 function updateModeIndicator() {
   const indicator = document.getElementById("mode-indicator");
   const header = document.querySelector("header");
@@ -155,10 +159,12 @@ function updateModeIndicator() {
 
   if (selectedDevices.size === 0) {
     indicator.textContent = "Mode: Select target(s)";
+
     indicator.classList.remove("remote", "local");
     header.classList.remove("mode-remote", "mode-local");
     return;
   }
+
 
   const selectedOrder = getSelectedDeviceOrder();
   const remoteDevices = [];
@@ -230,6 +236,7 @@ function updateCommandButtonStates() {
     return !Number.isNaN(modeValue) && modeValue >= 0.5;
   });
 
+
   buttons.forEach((btn) => {
     const name = btn.dataset.name;
     const mode = btn.dataset.mode || "set";
@@ -277,6 +284,7 @@ function formatValueWithFormat(value, fmt) {
   if (formatStr.includes("%08X")) {
     const intVal = Math.floor(numericValue);
     return "0x" + intVal.toString(16).toUpperCase().padStart(8, "0");
+
   }
 
   return Number(numericValue).toFixed(2);
@@ -293,6 +301,7 @@ function updateSpanDisplay(span, value) {
   if (span.textContent !== formattedText) {
     span.textContent = formattedText;
   }
+
 
   const numericValue = typeof value === "number" ? value : parseFloat(value);
   const upperLimit = parseFloat(span.dataset.upperOverrideVal);
@@ -357,6 +366,7 @@ function renderDeviceTable() {
 
   table.innerHTML = "";
 
+
   const hasSignals = trackedSignals.length > 0;
   emptyMessage.style.display = hasSignals ? "none" : "block";
 
@@ -371,6 +381,7 @@ function renderDeviceTable() {
   trackedSignals.forEach((signalName) => {
     const th = document.createElement("th");
     th.textContent = signalDisplayMap[signalName] || signalName;
+
     headerRow.appendChild(th);
   });
 
@@ -378,6 +389,7 @@ function renderDeviceTable() {
   table.appendChild(thead);
 
   const tbody = document.createElement("tbody");
+
   const sortedDevices = allDeviceIds.slice().sort((a, b) => getDeviceLabel(a).localeCompare(getDeviceLabel(b)));
 
   sortedDevices.forEach((deviceId) => {
@@ -406,6 +418,7 @@ function renderDeviceTable() {
     row.appendChild(modeCell);
 
     trackedSignals.forEach((signalName) => {
+
       const cell = document.createElement("td");
       cell.dataset.device = deviceId;
       cell.dataset.signal = signalName;
@@ -418,7 +431,9 @@ function renderDeviceTable() {
   });
 
   table.appendChild(tbody);
+
   updateAllDeviceRowStates();
+
 }
 
 function updateDeviceTableCell(deviceId, signalName) {
@@ -480,8 +495,10 @@ function initializeDeviceSelector() {
       }
     };
 
+
     getDeviceStatus(deviceId);
     updateDeviceCardStatus(deviceId);
+
     syncState();
 
     checkbox.addEventListener("change", () => {
@@ -492,6 +509,7 @@ function initializeDeviceSelector() {
       if (selectedDevices.size > 0) {
         clearErrorMessage();
       }
+
       refreshValueGrid();
       updateModeIndicator();
       updateCommandButtonStates();
@@ -541,6 +559,7 @@ function buildUI(displayConfig) {
     }
     if (panel.values?.length > 0) {
       panel.values.forEach(val => {
+
         if (val.name && !seenSignals.has(val.name)) {
           seenSignals.add(val.name);
           trackedSignals.push(val.name);
@@ -554,6 +573,7 @@ function buildUI(displayConfig) {
             lower_override_val: val.lower_override_val,
           };
         }
+
       });
 
       const helper = document.createElement("p");
@@ -588,12 +608,15 @@ function applyUpdate(data) {
       if (data.device_label) deviceInfo[device].label = data.device_label;
       if (data.ip) deviceInfo[device].ip = data.ip;
     }
+
     updateDeviceRowInfo(device);
     updateDeviceCardStatus(device);
+
   }
 
   if (!deviceValues[device]) {
     deviceValues[device] = {};
+
   }
 
   deviceValues[device][name] = storedValue;
@@ -615,6 +638,7 @@ function applyUpdate(data) {
 
   updateDeviceTableCell(device, name);
   updateDeviceRowState(device);
+
 }
 
 function initialFetchConfig() {
@@ -731,5 +755,7 @@ function clearErrorMessage() {
 document.addEventListener("DOMContentLoaded", () => {
   initializeDeviceSelector();
   initialFetchConfig();
+
   setInterval(checkDeviceTimeouts, 2000);
+
 });
