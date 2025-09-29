@@ -11,6 +11,7 @@ import json
 import time
 import os
 import webbrowser
+from typing import Iterable, List, Optional
 
 eventlet.monkey_patch()
 # Path where uploaded configs will be stored
@@ -20,18 +21,38 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 
-# --- Broadcast Deduplication Setup ---
-last_values = {}
+# --- Device Configuration ---
+DEVICES = {
+    "ci1": {"label": "C&I 1", "ip": "192.168.1.212"},
+    "ci2": {"label": "C&I 2", "ip": "192.168.1.211"},
+    "ci3": {"label": "C&I 3", "ip": "192.168.1.203"},
+    "ci4": {"label": "C&I 4", "ip": "192.168.1.213"},
+    "ci5": {"label": "C&I 5", "ip": "192.168.1.214"},
+    "ci6": {"label": "C&I 6", "ip": "192.168.1.208"},
+}
+IP_TO_DEVICE = {info["ip"]: dev_id for dev_id, info in DEVICES.items()}
 
-def handle_incoming_signal(name, value):
-    global last_values
-    if name not in last_values or last_values[name] != value:
-        last_values[name] = value
-        print(f"[UDP] Broadcast: {name}={value}")
-        socketio.emit("update_value", {"name": name, "value": value})
+
+def resolve_target_ips(target_ids: Optional[Iterable[str]]) -> List[str]:
+    """Return a list of unique IPs for the requested target device IDs."""
+    if target_ids is None:
+        return [info["ip"] for info in DEVICES.values()]
+
+    ips: List[str] = []
+    for target in target_ids:
+        info = DEVICES.get(target)
+        if info:
+            ip = info["ip"]
+            if ip not in ips:
+                ips.append(ip)
+    return ips
+
+
+def device_label(device_id: str) -> str:
+    info = DEVICES.get(device_id)
+    return info["label"] if info else device_id
 
 # --- NEW: Updated Network and Protocol Configuration ---
-PORTENTA_IP = "192.168.3.55"  # Portenta IP
 PORTENTA_PORT = 17751  # The NEW fixed port for the bridge server
 
 LOCAL_PORT = 10006
@@ -61,7 +82,7 @@ SIGNAL_MAP = {
     "c1": 0x18, "d1": 0x19, "a2": 0x20, "b2": 0x21, "c2": 0x22, "d2": 0x23, "run_current_wave": 0x24, "internal_temperature": 0x25
 }
 SIGNAL_ID_TO_NAME = {v: k for k, v in SIGNAL_MAP.items()}
-LATEST_VALUES = {}
+LATEST_VALUES = {device_id: {} for device_id in DEVICES}
 
 
 # --- NEW: Updated Packet Signature Functions ---
@@ -80,23 +101,6 @@ def _calc_binary_sign(data: bytes) -> bytes:
     """Signature function for raw binary packets (used for encoding commands)."""
     # This matches the new rule: SHA256(first 10 bytes + key)
     return hashlib.sha256(data + DEFAULT_KEY).digest()[-4:]
-
-
-def handle_udp_ack_packet(packet: bytes):
-    """Handles 14-byte ACK packets and emits value updates via Socket.IO."""
-    if len(packet) != 14 or packet[5] != 0xA0:
-        return
-
-    sig_id = packet[4]
-    value = struct.unpack('>f', packet[6:10])[0]
-    name = SIGNAL_ID_TO_NAME.get(sig_id)
-
-    if name:
-        prev = LATEST_VALUES.get(name)
-        if prev != value:
-            LATEST_VALUES[name] = value
-            print(f"[UDP] ACK 0xA0: {name} changed {prev} → {value}")
-            socketio.emit("update_value", {"name": name, "value": value})
 
 
 def decode_json_packet(packet: bytes):
@@ -126,6 +130,13 @@ def udp_listener_thread():
     while True:
         try:
             data, addr = udp_sock.recvfrom(8192)
+            src_ip = addr[0]
+            device_id = IP_TO_DEVICE.get(src_ip)
+            if not device_id:
+                print(f"[UDP] ⚠ Received packet from unknown device {src_ip}")
+                continue
+
+            device_values = LATEST_VALUES.setdefault(device_id, {})
             if len(data) == 14:
                 payload_bytes = data[:10]
                 signature = data[10:14]
@@ -144,23 +155,41 @@ def udp_listener_thread():
                     print(f"[UDP] ⚠ Unknown sig_id=0x{sig_id:02X}")
                     continue
 
-                prev = LATEST_VALUES.get(name)
+                prev = device_values.get(name)
                 if sig_type == 0xA0:  # ACK_OK → treat as update
                     if prev != value:
-                        LATEST_VALUES[name] = value
-                        print(f"[UDP] ✅ ACK 0xA0: {name} changed {prev} → {value}")
-                        print(f"[WS]   → Emitting to clients: update_value = {{ name: {name}, value: {value} }}")
-                        socketio.emit("update_value", {"name": name, "value": value})
-                        print(f"[EMIT] update_value → name: {name}, value: {value}")
+                        device_values[name] = value
+                        print(f"[UDP] ✅ ACK 0xA0 ({device_id}): {name} changed {prev} → {value}")
+                        print(f"[WS]   → Emitting to clients: update_value = {{ device: {device_id}, name: {name}, value: {value} }}")
+                        socketio.emit(
+                            "update_value",
+                            {
+                                "device": device_id,
+                                "device_label": device_label(device_id),
+                                "ip": src_ip,
+                                "name": name,
+                                "value": value,
+                            },
+                        )
+                        print(f"[EMIT] update_value → device: {device_id}, name: {name}, value: {value}")
                     else:
-                        print(f"[UDP] ACK 0xA0: {name} unchanged at {value}")
+                        print(f"[UDP] ACK 0xA0 ({device_id}): {name} unchanged at {value}")
                 else:
                     if prev != value:
-                        LATEST_VALUES[name] = value
-                        print(f"[UDP] 🔁 {name} changed: {prev} → {value}")
-                        print(f"[WS]   → Emitting to clients: update_value = {{ name: {name}, value: {value} }}")
-                        socketio.emit("update_value", {"name": name, "value": value})
-                        print(f"[EMIT] update_value → name: {name}, value: {value}")
+                        device_values[name] = value
+                        print(f"[UDP] 🔁 {name} ({device_id}) changed: {prev} → {value}")
+                        print(f"[WS]   → Emitting to clients: update_value = {{ device: {device_id}, name: {name}, value: {value} }}")
+                        socketio.emit(
+                            "update_value",
+                            {
+                                "device": device_id,
+                                "device_label": device_label(device_id),
+                                "ip": src_ip,
+                                "name": name,
+                                "value": value,
+                            },
+                        )
+                        print(f"[EMIT] update_value → device: {device_id}, name: {name}, value: {value}")
             else:
                 try:
                     msg = json.loads(data.decode())
@@ -176,7 +205,7 @@ def udp_listener_thread():
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", devices=DEVICES)
 
 
 @app.route("/builder")
@@ -189,12 +218,32 @@ def builder():
 def handle_connect():
     """Send the latest known values to a newly connected client."""
     print(f"[SOCKETIO] Client connected: {request.sid}. Sending initial values")
-    for name, value in LATEST_VALUES.items():
-        emit("update_value", {"name": name, "value": value})
+    for device_id, values in LATEST_VALUES.items():
+        for name, value in values.items():
+            emit(
+                "update_value",
+                {
+                    "device": device_id,
+                    "device_label": device_label(device_id),
+                    "ip": DEVICES.get(device_id, {}).get("ip"),
+                    "name": name,
+                    "value": value,
+                },
+            )
 
 @app.route("/api/get_config", methods=["GET"])
 def api_get_config():
     """Request the display configuration from the Portenta."""
+    target_device = request.args.get("device")
+    if target_device:
+        target_ids: Optional[List[str]] = [target_device]
+    else:
+        target_ids = None
+    target_ips = resolve_target_ips(target_ids)
+    if not target_ips:
+        return jsonify({"error": "no valid device targets"}), 400
+
+    target_ip = target_ips[0]
     uid = os.urandom(4)
     payload = uid + bytes([0x00, 0x21]) + CONFIG_KEY
     sign = _calc_binary_sign(payload)
@@ -208,7 +257,7 @@ def api_get_config():
         cfg_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         cfg_sock.bind(("", CONFIG_LOCAL_PORT))  # Use a dedicated source port
         cfg_sock.settimeout(0.5)
-        cfg_sock.sendto(packet, (PORTENTA_IP, PORTENTA_PORT))
+        cfg_sock.sendto(packet, (target_ip, PORTENTA_PORT))
 
         while time.time() < end_time:
             try:
@@ -248,6 +297,21 @@ def api_command():
         except (TypeError, ValueError):
             value = 0
 
+        raw_targets = message.get("targets")
+        if raw_targets is None:
+            target_ids = None
+        elif isinstance(raw_targets, str):
+            target_ids = [raw_targets]
+        else:
+            target_ids = list(raw_targets)
+
+        if target_ids is not None and len(target_ids) == 0:
+            return jsonify({"error": "no valid targets"}), 400
+
+        target_ips = resolve_target_ips(target_ids)
+        if not target_ips:
+            return jsonify({"error": "no valid targets"}), 400
+
         sig_id = SIGNAL_MAP.get(name)
         if sig_id is None:
             return jsonify({"error": "unknown signal"}), 400
@@ -266,8 +330,10 @@ def api_command():
         sign = _calc_binary_sign(payload)
         packet = payload + sign
 
-        udp_sock.sendto(packet, (PORTENTA_IP, PORTENTA_PORT))
-        return jsonify({"status": "sent"})
+        for ip in target_ips:
+            udp_sock.sendto(packet, (ip, PORTENTA_PORT))
+
+        return jsonify({"status": "sent", "targets": target_ips})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -282,15 +348,31 @@ def api_get_signal():
         if sig_id is None:
             return jsonify({"error": "unknown signal"}), 400
 
+        raw_targets = message.get("targets")
+        if raw_targets is None:
+            target_ids = None
+        elif isinstance(raw_targets, str):
+            target_ids = [raw_targets]
+        else:
+            target_ids = list(raw_targets)
+
+        if target_ids is not None and len(target_ids) == 0:
+            return jsonify({"error": "no valid targets"}), 400
+
+        target_ips = resolve_target_ips(target_ids)
+        if not target_ips:
+            return jsonify({"error": "no valid targets"}), 400
+
         uid = os.urandom(4)
         sig_type = 0x20  # GET
         value_bytes = struct.pack('>f', 0.0)
         payload = uid + bytes([sig_id, sig_type]) + value_bytes
         sign = _calc_binary_sign(payload)
         packet = payload + sign
-        print(f"[API] Sending GET for {name} (id=0x{sig_id:02X})")
-        udp_sock.sendto(packet, (PORTENTA_IP, PORTENTA_PORT))
-        return jsonify({"status": "sent"})
+        print(f"[API] Sending GET for {name} (id=0x{sig_id:02X}) to {target_ips}")
+        for ip in target_ips:
+            udp_sock.sendto(packet, (ip, PORTENTA_PORT))
+        return jsonify({"status": "sent", "targets": target_ips})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
