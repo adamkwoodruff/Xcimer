@@ -233,9 +233,10 @@
             "disable": false,
             "action": {
               "name": "inter_enable",
-              "do": "toggle"
+              "do": "set",
+              "amount": 1
             },
-            "text": "Internal Enable",
+            "text": "Internal Enable ON",
             "event_dest": "uc"
           },
           {
@@ -243,10 +244,35 @@
             "visible": true,
             "disable": false,
             "action": {
-              "name": "warn_lamp",
-              "do": "toggle"
+              "name": "inter_enable",
+              "do": "set",
+              "amount": 0
             },
-            "text": "Warning lamp test",
+            "text": "Internal Enable OFF",
+            "event_dest": "uc"
+          },
+          {
+            "id": 3,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "warn_lamp",
+              "do": "set",
+              "amount": 1
+            },
+            "text": "Warn Lamp ON",
+            "event_dest": "uc"
+          },
+          {
+            "id": 4,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "warn_lamp",
+              "do": "set",
+              "amount": 0
+            },
+            "text": "Warn Lamp OFF",
             "event_dest": "uc"
           }
         ],
@@ -436,9 +462,10 @@
             "disable": false,
             "action": {
               "name": "dump_fan",
-              "do": "toggle"
+              "do": "set",
+              "amount": 1
             },
-            "text": "Toggle Dump Fan",
+            "text": "Dump Fan ON",
             "event_dest": "uc"
           },
           {
@@ -446,10 +473,11 @@
             "visible": true,
             "disable": false,
             "action": {
-              "name": "dump_relay",
-              "do": "toggle"
+              "name": "dump_fan",
+              "do": "set",
+              "amount": 0
             },
-            "text": "Toggle Dump Relay",
+            "text": "Dump Fan OFF",
             "event_dest": "uc"
           },
           {
@@ -457,10 +485,47 @@
             "visible": true,
             "disable": false,
             "action": {
-              "name": "charger_relay",
-              "do": "toggle"
+              "name": "dump_relay",
+              "do": "set",
+              "amount": 1
             },
-            "text": "Toggle Charger Relay",
+            "text": "Dump Relay ON",
+            "event_dest": "uc"
+          },
+          {
+            "id": 4,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "dump_relay",
+              "do": "set",
+              "amount": 0
+            },
+            "text": "Dump Relay OFF",
+            "event_dest": "uc"
+          },
+          {
+            "id": 5,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "charger_relay",
+              "do": "set",
+              "amount": 1
+            },
+            "text": "Charger Relay ON",
+            "event_dest": "uc"
+          },
+          {
+            "id": 6,
+            "visible": true,
+            "disable": false,
+            "action": {
+              "name": "charger_relay",
+              "do": "set",
+              "amount": 0
+            },
+            "text": "Charger Relay OFF",
             "event_dest": "uc"
           },
           {
