@@ -77,8 +77,8 @@ static void ensure_tim1_10khz_pwm() {
 }
 
 static AnalogReadFunc voltageReader = nullptr;
-const float VOLTAGE_ADC_FILTER_ALPHA = 0.1f;
-static float voltage_filtered_raw_adc = -1.0f;
+static float filtered_probe_voltage = 0.0f;
+static bool  voltage_filter_initialized = false;
 
 void set_voltage_analog_reader(AnalogReadFunc func) { voltageReader = func; }
 
@@ -89,22 +89,21 @@ void init_voltage() {
 }
 
 void update_voltage() {
-  // --- Read/filter ADC (unchanged) ---
-  int raw_adc = voltageReader ? voltageReader(APIN_VOLTAGE_PROBE)
-                              : analogRead(APIN_VOLTAGE_PROBE);
+  // --- Read ADC value and apply simple IIR filtering ---
+  const int raw_adc = voltageReader ? voltageReader(APIN_VOLTAGE_PROBE)
+                                    : analogRead(APIN_VOLTAGE_PROBE);
 
-  if (voltage_filtered_raw_adc < 0.0f) {
-    voltage_filtered_raw_adc = (float)raw_adc;
+  const float vin = ((float)raw_adc / 4095.0f) * 3.3f;
+  const float sample_voltage = (vin - 1.65f) * VScale_V + VOffset_V;
+
+  if (!voltage_filter_initialized) {
+    filtered_probe_voltage = sample_voltage;
+    voltage_filter_initialized = true;
   } else {
-    voltage_filtered_raw_adc = (VOLTAGE_ADC_FILTER_ALPHA * (float)raw_adc)
-                             + (1.0f - VOLTAGE_ADC_FILTER_ALPHA) * voltage_filtered_raw_adc;
+    filtered_probe_voltage = (0.9f * filtered_probe_voltage) + (0.1f * sample_voltage);
   }
 
-  float vin = (lroundf(voltage_filtered_raw_adc) / 4095.0f) * 3.3f;
-
-  // --- Calibration chain (unchanged) ---
-  float calcVolt = (vin - 1.65f) * VScale_V + VOffset_V;
-  PowerState::probeVoltageOutput = calcVolt;
+  PowerState::probeVoltageOutput = filtered_probe_voltage;
 
   if (!s_tim1_inited) return;
 
