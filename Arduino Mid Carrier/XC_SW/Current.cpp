@@ -1,6 +1,8 @@
 #include "Current.h"
 #include "PowerState.h"
 #include "Config.h"
+#include "IIRFilter.h"
+#include "IGBT.h"
 #include <Arduino.h>
 #include "stm32h7xx_hal.h"
 
@@ -16,10 +18,9 @@ void set_current_analog_reader(AnalogReadFunc func) {
   currentReader = func;
 }
 
-// NEW: Smoothing factor for the ADC filter.
-const float CURRENT_ADC_FILTER_ALPHA = 0.1f;
-
-static float current_filtered_raw_adc = -1.0f;
+static BiquadIIR current_adc_filter(
+    0.06745527f, 0.13491055f, 0.06745527f,
+   -1.1429805f,  0.4128016f);
 
 void init_current() {
   pinMode(APIN_CURRENT_PROBE, INPUT);
@@ -29,32 +30,27 @@ void init_current() {
 }
 
 void update_current() {
-  // --- Read ADC value ---
-  int raw_adc = currentReader ? currentReader(APIN_CURRENT_PROBE)
-                              : analogRead(APIN_CURRENT_PROBE);
+  float calcCurr = PowerState::probeCurrent;
 
-  // --- NEW: Apply Exponential Moving Average (EMA) Filter ---
-  if (current_filtered_raw_adc < 0.0f) {
-    current_filtered_raw_adc = (float)raw_adc;
-  } else {
-    current_filtered_raw_adc = (CURRENT_ADC_FILTER_ALPHA * (float)raw_adc) + (1.0f - CURRENT_ADC_FILTER_ALPHA) * current_filtered_raw_adc;
+  if (igbt_drive_is_low()) {
+    int raw_adc = currentReader ? currentReader(APIN_CURRENT_PROBE)
+                                : analogRead(APIN_CURRENT_PROBE);
+
+    float filtered_adc = current_adc_filter.process(static_cast<float>(raw_adc));
+
+    float vin = (filtered_adc / 4095.0f) * 3.3f;
+
+    calcCurr = (vin - 1.65f) * VScale_C + VOffset_C;
+    PowerState::probeCurrent = calcCurr;
   }
 
-  // --- Convert filtered ADC value to voltage ---
-  // CORRECTED: Use 4095.0f for the Portenta's 12-bit ADC
-  float vin = (lroundf(current_filtered_raw_adc) / 4095.0f) * 3.3f; 
-
-  // --- Apply calibration and scaling ---
-  float calcCurr = (vin - 1.65f) * VScale_C + VOffset_C;
-  PowerState::probeCurrent = calcCurr;
-
-  constexpr float SCR_FIRE_A = 3200.0f;
-  const bool fire = (PowerState::probeCurrent > SCR_FIRE_A);
+  constexpr float SCR_FIRE_A = 4000.0f;
+  const bool fire = (calcCurr > SCR_FIRE_A);
   PowerState::ScrTrig  = fire;
   PowerState::ScrInhib = !fire;
 
   // --- Map probe current to PWM duty ---
-  float duty_norm = (PowerState::probeCurrent + 4250.0f) / 8500.0f;
+  float duty_norm = (calcCurr + 4250.0f) / 8500.0f;
   if (duty_norm < 0.0f)   duty_norm = 0.0f;
   if (duty_norm > 1.0f)   duty_norm = 1.0f;
 
