@@ -103,7 +103,8 @@ void update_voltage() {
     filtered_probe_voltage = (0.9f * filtered_probe_voltage) + (0.1f * sample_voltage);
   }
 
-  PowerState::probeVoltageOutput = filtered_probe_voltage;
+  PowerState::probeVoltageOutput = filtered_probe_voltage; 
+  //PowerState::probeVoltageOutput = 16.5;
 
   if (!s_tim1_inited) return;
 

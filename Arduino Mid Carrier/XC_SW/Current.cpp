@@ -134,7 +134,8 @@ void update_current() {
     }
   }
 
-  PowerState::probeCurrent = current_filter_initialized ? filtered_probe_current : 0.0f;
+  PowerState::probeCurrent = current_filter_initialized ? filtered_probe_current : 0.0f; 
+  //PowerState::probeCurrent = 500.0;
 
   // SCR logic
   constexpr float SCR_FIRE_A = 4000.0f;

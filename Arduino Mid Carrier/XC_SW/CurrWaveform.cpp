@@ -96,4 +96,3 @@ void update_curr_waveform(float dt) {
     prevOutputEnabled = outEn;
     prevChargeRelayOn = chargeRelayOn;
 }
-
