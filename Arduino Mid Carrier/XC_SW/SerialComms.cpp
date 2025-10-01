@@ -67,10 +67,7 @@ int get_internal_enable_state() { return PowerState::internalEnable ? 1 : 0; }
 int get_external_enable_state() { return PowerState::externalEnable ? 1 : 0; } 
 
 int get_dump_fan_state() { return PowerState::DumpFan ? 1 : 0; }
-int get_dump_relay_state() {
-  // UI expects logical ON/OFF opposite to the active-low hardware drive
-  return PowerState::DumpRelay ? 0 : 1;
-}
+int get_dump_relay_state() { return PowerState::DumpRelay ? 1 : 0; } 
 int get_charger_relay_state() { return PowerState::ChargerRelay ? 1 : 0; } 
 int get_scr_trig_state() { return PowerState::ScrTrig ? 1 : 0; }
 int get_scr_inhib_state() { return PowerState::ScrInhib ? 1 : 0; } 
@@ -96,7 +93,7 @@ int process_event_in_uc(const std::string& json_event_std)
     else if (jv.is<int>())          value = jv.as<int>();
     else if (jv.is<const char*>())  value = atof(jv.as<const char*>());
 
-    if (strcmp(name, "curr_set") == 0) {if (value < 0.0f) value = 0.0f; if (value > 3600.0f) value = 3600.0f; PowerState::setCurrent = value; return 1;}
+    if (strcmp(name, "curr_set") == 0) {if (value < 0.0f) value = 0.0f; if (value > 3000.0f) value = 3000.0f; PowerState::setCurrent = value; return 1;}
     else if (strcmp(name, "volt_set") == 0) {if (value < 0.0f) value = 0.0f; if (value > 285.0f) value = 285.0f; PowerState::setVoltage = value; return 1;}
     else if (strcmp(name, "inter_enable") == 0) { PowerState::internalEnable = (value != 0.0f); return 1; }
     else if (strcmp(name, "extern_enable") == 0) { PowerState::externalEnable = (value != 0.0f); return 1; }

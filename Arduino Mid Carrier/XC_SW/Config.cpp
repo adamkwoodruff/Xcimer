@@ -4,8 +4,8 @@
 // --- Define Calibration Constants ---
 //
 // initially bringing the system up.
-float VScale_V = 0.0f;
-float VOffset_V = 0.0f;
+float VScale_V = 1113.0f;
+float VOffset_V = -322.0f;
 float VScale_C = 0.0f;
 float VOffset_C = 0.0f;
 
@@ -17,7 +17,7 @@ unsigned long WARN_BLINK_INTERVAL_MS = 5000;
 float WARN_VOLTAGE_THRESHOLD = 50.0f;
 
 // --- Control Parameters ---
-float CURRENT_LIMIT_MAX  = 3600.0f;   // Max current in milli amps
+float CURRENT_LIMIT_MAX  = 3000.0f;   // Max current in milli amps
 float OVER_VOLTAGE_LIMIT = 285.0f;  // Disable if output exceeds this
 
 

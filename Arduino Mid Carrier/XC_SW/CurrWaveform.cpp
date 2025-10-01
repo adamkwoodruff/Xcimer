@@ -14,18 +14,9 @@ void update_curr_waveform(float dt) {
     static bool prevOutputEnabled = false;
 
     const bool outEn = PowerState::outputEnabled;
-    const bool chargerActive = PowerState::ChargerRelay;
-
-    if (chargerActive) {
-        running = false;
-        PowerState::setCurrent = 0.0f;
-        PowerState::runCurrentWave = false;
-        prevOutputEnabled = outEn;
-        return;
-    }
 
     // Rising-edge trigger on external-enabled output
-    if (outEn && !chargerActive && !prevOutputEnabled && !running) {
+    if (outEn && !prevOutputEnabled && !running) {
         t = 0.0f;
         running = true;
     }
