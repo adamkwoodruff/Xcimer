@@ -45,6 +45,14 @@ bool igbt_fault_active() {
   return (digitalRead(DPIN_GATE_FAULT) == LOW);
 }
 
+bool igbt_drive_is_low() {
+  if (!s_pwm_started) {
+    return true;
+  }
+
+  return (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_7) == GPIO_PIN_RESET);
+}
+
 void init_igbt() {
   // Fault input
   pinMode(DPIN_GATE_FAULT, INPUT_PULLUP);

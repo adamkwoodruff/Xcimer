@@ -2,15 +2,15 @@
 #include "PowerState.h"
 #include "Config.h"
 #include "SerialRPC.h"
+#include "IIRFilter.h"
 #include <Arduino.h>
 #include "stm32h7xx_hal.h"
 
 static AnalogReadFunc voltageReader = nullptr;
 
-
-const float VOLTAGE_ADC_FILTER_ALPHA = 0.1f;
-
-static float voltage_filtered_raw_adc = -1.0f;
+static BiquadIIR voltage_adc_filter(
+    0.06745527f, 0.13491055f, 0.06745527f,
+   -1.1429805f,  0.4128016f);
 
 // -----------------------------------------------------------------------------
 // Shared TIM1 PWM driver for measured voltage/current outputs (PA9 / PA10)
@@ -119,24 +119,13 @@ void init_voltage() {
 
 
 void update_voltage() { 
-  // --- Read ADC value ---
   int raw_adc = voltageReader ? voltageReader(APIN_VOLTAGE_PROBE)
                               : analogRead(APIN_VOLTAGE_PROBE);
 
-  // --- NEW: Apply Exponential Moving Average (EMA) Filter ---
-  if (voltage_filtered_raw_adc < 0.0f) {
-    // On the first run, initialize the filter with the first reading.
-    voltage_filtered_raw_adc = (float)raw_adc;
-  } else {
-    // Apply the filter to smooth out the reading.
-    voltage_filtered_raw_adc = (VOLTAGE_ADC_FILTER_ALPHA * (float)raw_adc) + (1.0f - VOLTAGE_ADC_FILTER_ALPHA) * voltage_filtered_raw_adc;
-  }
+  float filtered_adc = voltage_adc_filter.process(static_cast<float>(raw_adc));
 
-  // --- Convert filtered ADC value to voltage ---
-  // CORRECTED: Use 4095.0f for the Portenta's 12-bit ADC
-  float vin = (lroundf(voltage_filtered_raw_adc) / 4095.0f) * 3.3f;
+  float vin = (filtered_adc / 4095.0f) * 3.3f;
 
-  // --- Apply calibration and scaling (now on a stable value) ---
   float calcVolt = (vin - 1.65f) * VScale_V + VOffset_V;
   PowerState::probeVoltageOutput = calcVolt;
 
