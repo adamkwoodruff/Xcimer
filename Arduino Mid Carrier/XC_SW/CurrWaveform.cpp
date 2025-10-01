@@ -12,21 +12,29 @@ void update_curr_waveform(float dt) {
     static float t = 0.0f;
     static bool running = false;
     static bool prevOutputEnabled = false;
+    static bool prevChargeRelayOn = false;
 
     const bool outEn = PowerState::outputEnabled;
+    const bool chargeRelayOn = PowerState::ChargerRelay;
 
-    // Rising-edge trigger on external-enabled output
-    if (outEn && !prevOutputEnabled && !running) {
+    // Rising-edge trigger on external-enabled output, but only when the charge
+    // relay is OFF. Also allow starting when the charge relay transitions from
+    // ON→OFF while the output remains enabled.
+    const bool chargeRelayJustDisabled = prevChargeRelayOn && !chargeRelayOn;
+    if (outEn && !chargeRelayOn && !running &&
+        (!prevOutputEnabled || chargeRelayJustDisabled)) {
         t = 0.0f;
         running = true;
     }
 
     // Abort immediately if output is disabled mid-run
-    if (!outEn && running) {
+    // or if the charge relay turns ON while a waveform is executing.
+    if ((!outEn || chargeRelayOn) && running) {
         running = false;
         PowerState::setCurrent = 0.0f;
         PowerState::runCurrentWave = false; // status only
         prevOutputEnabled = outEn;
+        prevChargeRelayOn = chargeRelayOn;
         return;
     }
 
@@ -36,6 +44,7 @@ void update_curr_waveform(float dt) {
     if (!running) {
         PowerState::setCurrent = 0.0f;
         prevOutputEnabled = outEn;
+        prevChargeRelayOn = chargeRelayOn;
         return;
     }
 
@@ -71,6 +80,7 @@ void update_curr_waveform(float dt) {
         PowerState::runCurrentWave = false; // status
         PowerState::setCurrent = 0.0f;
         prevOutputEnabled = outEn;
+        prevChargeRelayOn = chargeRelayOn;
         return;
     }
 
@@ -84,4 +94,6 @@ void update_curr_waveform(float dt) {
     if (dt < 0.0f) dt = 0.0f;
     t += dt;
     prevOutputEnabled = outEn;
+    prevChargeRelayOn = chargeRelayOn;
 }
+

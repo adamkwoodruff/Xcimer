@@ -1,6 +1,7 @@
 #include "Current.h"
 #include "PowerState.h"
 #include "Config.h"
+#include "IGBT.h"
 #include "stm32h7xx_hal.h"
 
 // ---------- HAL TIM1 (shared timer) state ----------
@@ -89,9 +90,8 @@ static void ensure_tim1_10khz_pwm() {
 static AnalogReadFunc currentReader = nullptr;
 void set_current_analog_reader(AnalogReadFunc func) { currentReader = func; }
 
-// NEW: Smoothing factor for the ADC filter.
-const float CURRENT_ADC_FILTER_ALPHA = 0.1f;
-static float current_filtered_raw_adc = -1.0f;
+static float filtered_probe_current = 0.0f;
+static bool  current_filter_initialized = false;
 
 void init_current() {
   pinMode(APIN_CURRENT_PROBE, INPUT);
@@ -113,26 +113,31 @@ void update_current() {
       __HAL_TIM_SET_COMPARE(&s_tim1, TIM_CHANNEL_3, 0U); // current display PWM = 0%
     }
     // Do not integrate/filter ADC while idle to avoid stale drift
-    current_filtered_raw_adc = -1.0f; // reset EMA on next run
+    filtered_probe_current = 0.0f;
+    current_filter_initialized = false;
     return;
   }
 
-  // --- Read ADC value ---
-  int raw_adc = currentReader ? currentReader(APIN_CURRENT_PROBE)
-                              : analogRead(APIN_CURRENT_PROBE);
+  if (igbt_drive_is_low()) {
+    // --- Read ADC value and apply simple IIR filtering ---
+    const int raw_adc = currentReader ? currentReader(APIN_CURRENT_PROBE)
+                                      : analogRead(APIN_CURRENT_PROBE);
 
-  // --- EMA filter ---
-  if (current_filtered_raw_adc < 0.0f) current_filtered_raw_adc = (float)raw_adc;
-  else current_filtered_raw_adc = (CURRENT_ADC_FILTER_ALPHA * (float)raw_adc)
-                                + (1.0f - CURRENT_ADC_FILTER_ALPHA) * current_filtered_raw_adc;
+    const float vin = ((float)raw_adc / 4095.0f) * 3.3f;
+    const float sample_current = (vin - 1.65f) * VScale_C + VOffset_C;
 
-  // --- Convert & calibrate ---
-  float vin = (lroundf(current_filtered_raw_adc) / 4095.0f) * 3.3f; 
-  float calcCurr = (vin - 1.65f) * VScale_C + VOffset_C;
-  PowerState::probeCurrent = calcCurr;
+    if (!current_filter_initialized) {
+      filtered_probe_current = sample_current;
+      current_filter_initialized = true;
+    } else {
+      filtered_probe_current = (0.9f * filtered_probe_current) + (0.1f * sample_current);
+    }
+  }
+
+  PowerState::probeCurrent = current_filter_initialized ? filtered_probe_current : 0.0f;
 
   // SCR logic
-  constexpr float SCR_FIRE_A = 3200.0f;
+  constexpr float SCR_FIRE_A = 4000.0f;
   const bool fire = (PowerState::probeCurrent > SCR_FIRE_A);
   PowerState::ScrTrig  = fire;
   PowerState::ScrInhib = !fire;
