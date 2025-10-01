@@ -1,145 +1,118 @@
 #include "Voltage.h"
 #include "PowerState.h"
 #include "Config.h"
-#include "SerialRPC.h"
-#include "IIRFilter.h"
-#include <Arduino.h>
 #include "stm32h7xx_hal.h"
 
-static AnalogReadFunc voltageReader = nullptr;
+static TIM_HandleTypeDef s_tim1 = {};
+static bool              s_tim1_inited = false;
 
-static BiquadIIR voltage_adc_filter(
-    0.06745527f, 0.13491055f, 0.06745527f,
-   -1.1429805f,  0.4128016f);
-
-// -----------------------------------------------------------------------------
-// Shared TIM1 PWM driver for measured voltage/current outputs (PA9 / PA10)
-// -----------------------------------------------------------------------------
-
-TIM_HandleTypeDef g_measured_pwm_tim1 = {};
-bool              g_measured_pwm_started = false;
-
-static inline uint32_t measured_pwm_duty_to_ccr(float duty_norm) {
+static inline uint32_t duty_to_ccr(float duty_norm) {
   if (duty_norm <= 0.0f) return 0U;
-  uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&g_measured_pwm_tim1);
-  uint32_t ccr = (uint32_t)(duty_norm * (float)(arr + 1U) + 0.5f);
+  float dn = (duty_norm >= 1.0f) ? 1.0f : duty_norm;
+  const uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&s_tim1);
+  uint32_t ccr = (uint32_t)(dn * (float)(arr + 1U) + 0.5f);
   if (ccr > arr) ccr = arr;
   return ccr;
 }
 
-bool ensure_measured_pwm_timer() {
-  if (g_measured_pwm_started) {
-    return true;
-  }
+static void ensure_tim1_10khz_pwm() {
+  if (s_tim1_inited) return;
 
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_TIM1_CLK_ENABLE();
 
+  // PA9  -> TIM1_CH2 (AF1)
+  // PA10 -> TIM1_CH3 (AF1)
   GPIO_InitTypeDef gpio = {};
-  gpio.Pin       = GPIO_PIN_9 | GPIO_PIN_10;
   gpio.Mode      = GPIO_MODE_AF_PP;
   gpio.Pull      = GPIO_NOPULL;
   gpio.Speed     = GPIO_SPEED_FREQ_HIGH;
+
+  gpio.Pin       = GPIO_PIN_9;
   gpio.Alternate = GPIO_AF1_TIM1;
   HAL_GPIO_Init(GPIOA, &gpio);
 
-  g_measured_pwm_tim1.Instance               = TIM1;
-  g_measured_pwm_tim1.Init.Prescaler         = 0;
-  g_measured_pwm_tim1.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  g_measured_pwm_tim1.Init.Period            = 19999; // 200 MHz / (0+1) / (19999+1) = 10 kHz
-  g_measured_pwm_tim1.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
-  g_measured_pwm_tim1.Init.RepetitionCounter = 0;
-  g_measured_pwm_tim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_PWM_Init(&g_measured_pwm_tim1) != HAL_OK) {
-    g_measured_pwm_started = false;
-    return false;
+  gpio.Pin       = GPIO_PIN_10;
+  HAL_GPIO_Init(GPIOA, &gpio);
+
+  const uint32_t timer_clock_hz = 200000000U;
+  const float    f_pwm          = 10000.0f;
+  uint32_t total_period_ticks   = (uint32_t)( (double)timer_clock_hz / (2.0 * f_pwm) );
+
+  uint32_t psc = 0, arr = 0;
+  while (1) {
+    arr = (total_period_ticks / (psc + 1U)) - 1U;
+    if (arr <= 65535U) break;
+    if (++psc > 65535U) return;
   }
+
+  s_tim1.Instance               = TIM1;
+  s_tim1.Init.Prescaler         = psc;
+  s_tim1.Init.CounterMode       = TIM_COUNTERMODE_CENTERALIGNED1;
+  s_tim1.Init.Period            = arr;
+  s_tim1.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+  s_tim1.Init.RepetitionCounter = 0;
+  s_tim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_PWM_Init(&s_tim1) != HAL_OK) return;
 
   TIM_OC_InitTypeDef oc = {};
-  oc.OCMode      = TIM_OCMODE_PWM1;
-  oc.Pulse       = 0U;
-  oc.OCPolarity  = TIM_OCPOLARITY_HIGH;
-  oc.OCFastMode  = TIM_OCFAST_DISABLE;
-  oc.OCIdleState = TIM_OCIDLESTATE_RESET;
+  oc.OCMode       = TIM_OCMODE_PWM1;
+  oc.Pulse        = 0U;
+  oc.OCPolarity   = TIM_OCPOLARITY_HIGH;    
+  oc.OCFastMode   = TIM_OCFAST_DISABLE;
+  oc.OCIdleState  = TIM_OCIDLESTATE_RESET;
 
-  if (HAL_TIM_PWM_ConfigChannel(&g_measured_pwm_tim1, &oc, TIM_CHANNEL_2) != HAL_OK) {
-    return false;
-  }
-  if (HAL_TIM_PWM_ConfigChannel(&g_measured_pwm_tim1, &oc, TIM_CHANNEL_3) != HAL_OK) {
-    return false;
-  }
+  if (HAL_TIM_PWM_ConfigChannel(&s_tim1, &oc, TIM_CHANNEL_2) != HAL_OK) return;
+  if (HAL_TIM_PWM_ConfigChannel(&s_tim1, &oc, TIM_CHANNEL_3) != HAL_OK) return;
 
-  if (HAL_TIM_PWM_Start(&g_measured_pwm_tim1, TIM_CHANNEL_2) != HAL_OK) {
-    return false;
-  }
-  if (HAL_TIM_PWM_Start(&g_measured_pwm_tim1, TIM_CHANNEL_3) != HAL_OK) {
-    return false;
-  }
+  if (HAL_TIM_PWM_Start(&s_tim1, TIM_CHANNEL_2) != HAL_OK) return;
+  if (HAL_TIM_PWM_Start(&s_tim1, TIM_CHANNEL_3) != HAL_OK) return;
 
-  __HAL_TIM_SET_COMPARE(&g_measured_pwm_tim1, TIM_CHANNEL_2, 0U);
-  __HAL_TIM_SET_COMPARE(&g_measured_pwm_tim1, TIM_CHANNEL_3, 0U);
+  __HAL_TIM_SET_PRESCALER(&s_tim1, psc);
+  __HAL_TIM_SET_AUTORELOAD(&s_tim1, arr);
+  __HAL_TIM_SET_COMPARE(&s_tim1, TIM_CHANNEL_2, 0U);
+  __HAL_TIM_SET_COMPARE(&s_tim1, TIM_CHANNEL_3, 0U);
 
-  g_measured_pwm_started = true;
-  return true;
+  s_tim1_inited = true;
 }
 
-bool measured_pwm_ready() {
-  return g_measured_pwm_started;
-}
+static AnalogReadFunc voltageReader = nullptr;
+const float VOLTAGE_ADC_FILTER_ALPHA = 0.1f;
+static float voltage_filtered_raw_adc = -1.0f;
 
-void measured_pwm_set_duty(uint32_t channel, float duty_norm) {
-  if (!g_measured_pwm_started) {
-    return;
-  }
-
-  if (duty_norm <= 0.0f) {
-    __HAL_TIM_SET_COMPARE(&g_measured_pwm_tim1, channel, 0U);
-    return;
-  }
-
-  if (duty_norm >= 1.0f) {
-    const uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&g_measured_pwm_tim1);
-    __HAL_TIM_SET_COMPARE(&g_measured_pwm_tim1, channel, arr);
-    return;
-  }
-
-  __HAL_TIM_SET_COMPARE(&g_measured_pwm_tim1, channel, measured_pwm_duty_to_ccr(duty_norm));
-}
-
-void set_voltage_analog_reader(AnalogReadFunc func) {
-  voltageReader = func;
-}
+void set_voltage_analog_reader(AnalogReadFunc func) { voltageReader = func; }
 
 void init_voltage() {
   pinMode(APIN_VOLTAGE_PROBE, INPUT);
   pinMode(MEASURED_VOLT_OUT, OUTPUT);
-
-  ensure_measured_pwm_timer();
+  ensure_tim1_10khz_pwm(); // set up TIM1 hardware PWM @10kHz
 }
 
-
-void update_voltage() { 
+void update_voltage() {
+  // --- Read/filter ADC (unchanged) ---
   int raw_adc = voltageReader ? voltageReader(APIN_VOLTAGE_PROBE)
                               : analogRead(APIN_VOLTAGE_PROBE);
 
-  float filtered_adc = voltage_adc_filter.process(static_cast<float>(raw_adc));
+  if (voltage_filtered_raw_adc < 0.0f) {
+    voltage_filtered_raw_adc = (float)raw_adc;
+  } else {
+    voltage_filtered_raw_adc = (VOLTAGE_ADC_FILTER_ALPHA * (float)raw_adc)
+                             + (1.0f - VOLTAGE_ADC_FILTER_ALPHA) * voltage_filtered_raw_adc;
+  }
 
-  float vin = (filtered_adc / 4095.0f) * 3.3f;
+  float vin = (lroundf(voltage_filtered_raw_adc) / 4095.0f) * 3.3f;
 
+  // --- Calibration chain (unchanged) ---
   float calcVolt = (vin - 1.65f) * VScale_V + VOffset_V;
   PowerState::probeVoltageOutput = calcVolt;
 
-  // --- Normalize and generate PWM output ---
-  float duty_norm = (calcVolt + 1000.0f) / 2000.0f;
+  if (!s_tim1_inited) return;
+
+  // --- Duty mapping: -1000 → 0%, +1000 → 100% ---
+  float duty_norm = (PowerState::probeVoltageOutput + 1000.0f) / 2000.0f;
   if (duty_norm < 0.0f) duty_norm = 0.0f;
   if (duty_norm > 1.0f) duty_norm = 1.0f;
 
-  if (!measured_pwm_ready()) {
-    if (!ensure_measured_pwm_timer()) {
-      return;
-    }
-  }
-
-  measured_pwm_set_duty(TIM_CHANNEL_2, duty_norm);
+  // Drive TIM1_CH2 (PA9) for voltage display PWM
+  __HAL_TIM_SET_COMPARE(&s_tim1, TIM_CHANNEL_2, duty_to_ccr(duty_norm));
 }
-
